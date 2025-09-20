@@ -1,3 +1,9 @@
+#include <SPI.h>
+#include <Ethernet.h>
+#include <EthernetUdp.h>
+
+const char* magicString = "Submarine";
+
 #define clamp(num, minV, maxV) (max(min((num), (maxV)), (minV)))
 
 enum class AxisesNames
@@ -130,7 +136,7 @@ public:
   void setAcceleration(const Axises& axises)
   {
     int16_t motorsPower[N];
-    unsigned int16_t maxValue = 0;
+    uint16_t maxValue = 0;
     for(unsigned int i = 0; i < N; ++i)
     {
       maxValue = max(abs(motorsPower[i] = motors[i].getRequiredPower(axises)), maxValue);
@@ -146,6 +152,173 @@ public:
     {
       motors[i].setPower(motorsPower[i]);
     }  
+  }
+};
+
+class DataTransmitter {
+private:
+  byte mac[6];                  // MAC-адрес устройства
+  IPAddress targetIP;           // IP-адрес партнера
+  EthernetUDP Udp;              // UDP для broadcast и данных
+  EthernetClient tcpClient;      // TCP-клиент (для слейва)
+  EthernetServer tcpServer;     // TCP-сервер (для мастера)
+  const char* magicString;      // Уникальная строка для обнаружения
+  unsigned int port;            // Порт для UDP и TCP
+  bool isMaster;                // Флаг, мастер или слейв
+
+public:
+  DataTransmitter(const byte* mac, unsigned int port, const char* magicString, bool master = false) 
+    : targetIP(0, 0, 0, 0), tcpServer(port), isMaster(master) {
+    this->port = port;
+    this->magicString = magicString;
+    for (char i = 0; i < 6; ++i) {
+      this->mac[i] = mac[i];
+    }
+  }
+
+  // Отправка broadcast для обнаружения
+  IPAddress sendDiscoveryBroadcast() {
+    Udp.beginPacket(IPAddress(255, 255, 255, 255), port);
+    Udp.write(magicString);
+    Udp.write((const uint8_t*)&Ethernet.localIP(), 4);
+    Udp.endPacket();
+    return Ethernet.localIP();
+  }
+
+  // Проверка входящих broadcast-пакетов
+  IPAddress checkDiscoveryPackets() {
+    IPAddress noPartner(0, 0, 0, 0);
+    int packetSize = Udp.parsePacket();
+    if (packetSize) {
+      char buffer[packetSize];
+      Udp.read(buffer, packetSize);
+      if (strncmp(buffer, magicString, strlen(magicString)) == 0) {
+        IPAddress receivedIP;
+        memcpy(&receivedIP, buffer + strlen(magicString), 4);
+        if (receivedIP != Ethernet.localIP()) {
+          targetIP = receivedIP; // Сохраняем IP партнера
+          return receivedIP;
+        }
+      }
+    }
+    return noPartner;
+  }
+
+  // Инициализация для слейва
+  int initSlave() {
+    SPI.begin();
+    SPI.setClockDivider(SPI_CLOCK_DIV2); // SPI на 8 МГц
+    if (Ethernet.begin(mac) == 0) {
+      Serial.println("Ошибка DHCP");
+      return 1;
+    }
+    Serial.println(Ethernet.localIP());
+    if (!Udp.begin(port)) {
+      Serial.println("Ошибка открытия UDP-порта");
+      return 1;
+    }
+    return 0;
+  }
+
+  // Инициализация для мастера
+  int initMaster() {
+    SPI.begin();
+    SPI.setClockDivider(SPI_CLOCK_DIV2); // SPI на 8 МГц
+    if (Ethernet.begin(mac) == 0) {
+      Serial.println("Ошибка DHCP");
+      return 1;
+    }
+    Serial.println(Ethernet.localIP());
+    if (!Udp.begin(port)) {
+      Serial.println("Ошибка открытия UDP-порта");
+      return 1;
+    }
+    tcpServer.begin();
+    return 0;
+  }
+
+  // Подтверждение связи через TCP
+  bool confirmConnection() {
+    if (targetIP == IPAddress(0, 0, 0, 0)) {
+      return false; // Партнер еще не найден
+    }
+    if (isMaster) {
+      // Мастер принимает подключение от слейва
+      EthernetClient client = tcpServer.available();
+      if (client) {
+        client.write("ACK");
+        client.stop();
+        return true;
+      }
+      return false;
+    } else {
+      // Слейв подключается к мастеру
+      if (tcpClient.connect(targetIP, port)) {
+        char buffer[4];
+        int len = tcpClient.read((uint8_t*)buffer, 4);
+        if (len > 0 && strncmp(buffer, "ACK", 3) == 0) {
+          tcpClient.stop();
+          return true;
+        }
+        tcpClient.stop();
+      }
+      return false;
+    }
+  }
+
+  // Новый метод для обнаружения партнера (для обоих устройств)
+  IPAddress discoverPartner() {
+    static unsigned long lastBroadcastTime = 0;
+    const unsigned long broadcastInterval = 5000; // 5 секунд
+    IPAddress noPartner(0, 0, 0, 0);
+
+    // Отправляем broadcast, если прошло 5 секунд
+    if (millis() - lastBroadcastTime > broadcastInterval) {
+      sendDiscoveryBroadcast();
+      lastBroadcastTime = millis();
+    }
+
+    // Проверяем входящие пакеты
+    IPAddress foundIP = checkDiscoveryPackets();
+    if (foundIP != noPartner) {
+      // Партнер найден, подтверждаем через TCP
+      if (confirmConnection()) {
+        return foundIP; // Возвращаем IP партнера после TCP-подтверждения
+      }
+    }
+
+    return noPartner; // Партнер не найден
+  }
+
+  // Отправка сырых данных партнеру
+  void sendData(const byte* data, int dataSize) {
+    if (targetIP != IPAddress(0, 0, 0, 0)) {
+      Udp.beginPacket(targetIP, port);
+      Udp.write(data, dataSize);
+      Udp.endPacket();
+    }
+  }
+
+  // Получение сырых данных (возвращает размер данных или 0, если ничего нет)
+  int receiveData(byte* buffer, int maxSize) {
+    int packetSize = Udp.parsePacket();
+    if (packetSize && packetSize <= maxSize) {
+      Udp.read(buffer, packetSize);
+      if (strncmp((char*)buffer, magicString, strlen(magicString)) != 0) {
+        return packetSize;
+      }
+    }
+    return 0;
+  }
+
+  // Получение IP партнера
+  IPAddress getTargetIP() {
+    return targetIP;
+  }
+
+  // Поддержание DHCP
+  void maintain() {
+    Ethernet.maintain();
   }
 };
 
