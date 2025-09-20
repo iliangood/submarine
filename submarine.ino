@@ -1,4 +1,6 @@
-enum AxisesNames
+#define clamp(num, minV, maxV) (max(min((num), (maxV)), (minV)))
+
+enum class AxisesNames
 {
     Vx = 0,
     Vy = 1,
@@ -18,7 +20,7 @@ public:
     {
         for (char i = 0; i < 6; ++i)
         {
-            this->axises[i] = axises[i];
+            this->axises[i] = clamp(axises[i], -256, 256);
         }
     }
 
@@ -37,14 +39,19 @@ public:
         return axises[static_cast<int>(index)];
     }
 
+    int16_t operator[](int index) const
+    {
+        return axises[index];
+    }
+
     Axises(int16_t Vx, int16_t Vy, int16_t Vz, int16_t Wx, int16_t Wy, int16_t Wz)
     {
-        axises[AxisesNames::Vx] = Vx;
-        axises[AxisesNames::Vy] = Vy;
-        axises[AxisesNames::Vz] = Vz;
-        axises[AxisesNames::Wx] = Wx;
-        axises[AxisesNames::Wy] = Wy;
-        axises[AxisesNames::Wz] = Wz;
+        (*this)[AxisesNames::Vx] = clamp(Vx, -256, 256);
+        (*this)[AxisesNames::Vy] = clamp(Vy, -256, 256);
+        (*this)[AxisesNames::Vz] = clamp(Vz, -256, 256);
+        (*this)[AxisesNames::Wx] = clamp(Wx, -256, 256);
+        (*this)[AxisesNames::Wy] = clamp(Wy, -256, 256);
+        (*this)[AxisesNames::Wz] = clamp(Wz, -256, 256);
     }
 
     int getAxis(AxisesNames axis) const
@@ -58,44 +65,88 @@ public:
     }
 };
 
-class motor
+class Motor
 {
-  char pinForward;
-  char pinBackward;
-  int32_t power;
+  char pin;
+  int16_t power;
   Axises axises;
 public:
-  motor(Axises axises, char pinForward, char pinBackward)
+  Motor(const Axises& axises, char pin)
   {
-    pinMode(pinForward, OUTPUT);
-    pinMode(pinBackward, OUTPUT);
+    pinMode(pin, OUTPUT);
     this->axises = axises;
-    this->pinBackward = pinBackward;
-    this->pinForward = pinForward;
+    this->pin = pin;
     power = 0;
   }
 
-  int32_t getPower()
+  int16_t getPower() const
   {
     return power;
   }
 
-  int32_t setPower(int32_t power)
+  int16_t setPower(int16_t power)
   {
-    power = max(min(power, 256), -256);
-    if(power > 0)
-    {
-      analogWrite(pinForward, power);
-      analogWrite(pinBackward, 0);
-    }
-    else
-    {
-      analogWrite(pinForward, 01);
-      analogWrite(pinBackward, power);
-    }
+    power = clamp(power, -256, 256);
+    analogWrite(pin, map(power, -256, 256, 0, 255));
     return power;
   }
 
+  int16_t getRequiredPower(const Axises& axises) const
+  {
+    int16_t resPower = 0;
+    for(char i = 0; i < 6; ++i)
+    {
+      resPower += clamp(axises[i] * this->axises[i], -256, 256);
+    }
+    return resPower;
+  }
+
+};
+
+template<size_t N>
+class MotorController
+{
+  Motor motors[N];
+public:
+  MotorController(const Motor* motors)
+  {
+    for(unsigned int i = 0; i < N; ++i)
+    {
+      this->motors[i] = motors[i];
+    }
+  }
+
+  MotorController(...)
+  {
+    va_list args;
+    va_start(args, N);
+    for (size_t i = 0; i < N; ++i) 
+    {
+      motors[i] = va_arg(args, Motor);
+    }
+    va_end(args);
+  }
+
+  void setAcceleration(const Axises& axises)
+  {
+    int16_t motorsPower[N];
+    unsigned int16_t maxValue = 0;
+    for(unsigned int i = 0; i < N; ++i)
+    {
+      maxValue = max(abs(motorsPower[i] = motors[i].getRequiredPower(axises)), maxValue);
+    }
+    if(maxValue > 256)
+    {
+      for(unsigned int i = 0; i < N; ++i)
+      {
+        motors[i].setPower(((static_cast<int32_t>(motorsPower[i])) * 256) / maxValue);
+      }
+    }
+    for(unsigned int i = 0; i < N; ++i)
+    {
+      motors[i].setPower(motorsPower[i]);
+    }  
+  }
 };
 
 void setup() {
