@@ -157,27 +157,28 @@ public:
 
 class DataTransmitter {
 private:
-  byte mac[6];                  // MAC-адрес устройства
-  IPAddress targetIP;           // IP-адрес партнера
-  EthernetUDP Udp;              // UDP для broadcast и данных
-  EthernetClient tcpClient;      // TCP-клиент (для слейва)
-  EthernetServer tcpServer;     // TCP-сервер (для мастера)
-  const char* magicString;      // Уникальная строка для обнаружения
-  unsigned int port;            // Порт для UDP и TCP
-  bool isMaster;                // Флаг, мастер или слейв
+  byte mac[6];
+  IPAddress targetIP;
+  EthernetUDP Udp;
+  EthernetClient tcpClient;
+  EthernetServer tcpServer;
+  const char* magicString;
+  unsigned int port;
+  bool isMaster;
 
 public:
   DataTransmitter(const byte* mac, unsigned int port, const char* magicString, bool master = false) 
-    : targetIP(0, 0, 0, 0), tcpServer(port), isMaster(master) {
+    : targetIP(0, 0, 0, 0), tcpServer(port), isMaster(master) 
+    {
     this->port = port;
     this->magicString = magicString;
-    for (char i = 0; i < 6; ++i) {
+    for (char i = 0; i < 6; ++i) 
       this->mac[i] = mac[i];
-    }
   }
 
-  // Отправка broadcast для обнаружения
-  IPAddress sendDiscoveryBroadcast() {
+
+  IPAddress sendDiscoveryBroadcast()
+  {
     Udp.beginPacket(IPAddress(255, 255, 255, 255), port);
     Udp.write(magicString);
     Udp.write((const uint8_t*)&Ethernet.localIP(), 4);
@@ -185,51 +186,55 @@ public:
     return Ethernet.localIP();
   }
 
-  // Проверка входящих broadcast-пакетов
-  IPAddress checkDiscoveryPackets() {
+  IPAddress checkDiscoveryPackets() 
+  {
     IPAddress noPartner(0, 0, 0, 0);
     int packetSize = Udp.parsePacket();
-    if (packetSize) {
+    if (packetSize) 
+    {
       char buffer[packetSize];
       Udp.read(buffer, packetSize);
-      if (strncmp(buffer, magicString, strlen(magicString)) == 0) {
+      if (strncmp(buffer, magicString, strlen(magicString)) == 0) 
+      {
         IPAddress receivedIP;
         memcpy(&receivedIP, buffer + strlen(magicString), 4);
-        if (receivedIP != Ethernet.localIP()) {
-          targetIP = receivedIP; // Сохраняем IP партнера
-          return receivedIP;
-        }
+        if (receivedIP != Ethernet.localIP()) 
+          return targetIP = receivedIP;
       }
     }
     return noPartner;
   }
 
-  // Инициализация для слейва
-  int initSlave() {
+  int initSlave()
+  {
     SPI.begin();
-    SPI.setClockDivider(SPI_CLOCK_DIV2); // SPI на 8 МГц
-    if (Ethernet.begin(mac) == 0) {
+    SPI.setClockDivider(SPI_CLOCK_DIV2);
+    if (Ethernet.begin(mac) == 0)
+    {
       Serial.println("Ошибка DHCP");
       return 1;
     }
     Serial.println(Ethernet.localIP());
-    if (!Udp.begin(port)) {
+    if (!Udp.begin(port))
+    {
       Serial.println("Ошибка открытия UDP-порта");
       return 1;
     }
     return 0;
   }
 
-  // Инициализация для мастера
-  int initMaster() {
+  int initMaster() 
+  {
     SPI.begin();
-    SPI.setClockDivider(SPI_CLOCK_DIV2); // SPI на 8 МГц
-    if (Ethernet.begin(mac) == 0) {
+    SPI.setClockDivider(SPI_CLOCK_DIV2);
+    if (Ethernet.begin(mac) == 0) 
+    {
       Serial.println("Ошибка DHCP");
       return 1;
     }
     Serial.println(Ethernet.localIP());
-    if (!Udp.begin(port)) {
+    if (!Udp.begin(port)) 
+    {
       Serial.println("Ошибка открытия UDP-порта");
       return 1;
     }
@@ -237,13 +242,11 @@ public:
     return 0;
   }
 
-  // Подтверждение связи через TCP
   bool confirmConnection() {
     if (targetIP == IPAddress(0, 0, 0, 0)) {
-      return false; // Партнер еще не найден
+      return false;
     }
     if (isMaster) {
-      // Мастер принимает подключение от слейва
       EthernetClient client = tcpServer.available();
       if (client) {
         client.write("ACK");
@@ -251,12 +254,14 @@ public:
         return true;
       }
       return false;
-    } else {
-      // Слейв подключается к мастеру
-      if (tcpClient.connect(targetIP, port)) {
+    } else
+    {
+      if (tcpClient.connect(targetIP, port))
+      {
         char buffer[4];
         int len = tcpClient.read((uint8_t*)buffer, 4);
-        if (len > 0 && strncmp(buffer, "ACK", 3) == 0) {
+        if (len > 0 && strncmp(buffer, "ACK", 3) == 0)
+        {
           tcpClient.stop();
           return true;
         }
@@ -266,58 +271,53 @@ public:
     }
   }
 
-  // Новый метод для обнаружения партнера (для обоих устройств)
-  IPAddress discoverPartner() {
+  IPAddress discoverTarget()
+  {
     static unsigned long lastBroadcastTime = 0;
-    const unsigned long broadcastInterval = 5000; // 5 секунд
+    const unsigned long broadcastInterval = 5000;
     IPAddress noPartner(0, 0, 0, 0);
 
-    // Отправляем broadcast, если прошло 5 секунд
-    if (millis() - lastBroadcastTime > broadcastInterval) {
+    if (millis() - lastBroadcastTime > broadcastInterval) 
+    {
       sendDiscoveryBroadcast();
       lastBroadcastTime = millis();
     }
 
-    // Проверяем входящие пакеты
     IPAddress foundIP = checkDiscoveryPackets();
-    if (foundIP != noPartner) {
-      // Партнер найден, подтверждаем через TCP
-      if (confirmConnection()) {
-        return foundIP; // Возвращаем IP партнера после TCP-подтверждения
-      }
-    }
-
-    return noPartner; // Партнер не найден
+    if (confirmConnection() && foundIP != noPartner)
+      return foundIP;
+    return noPartner;
   }
 
-  // Отправка сырых данных партнеру
-  void sendData(const byte* data, int dataSize) {
-    if (targetIP != IPAddress(0, 0, 0, 0)) {
+  void sendData(const byte* data, int dataSize)
+  {
+    if (targetIP != IPAddress(0, 0, 0, 0))
+    {
       Udp.beginPacket(targetIP, port);
       Udp.write(data, dataSize);
       Udp.endPacket();
     }
   }
 
-  // Получение сырых данных (возвращает размер данных или 0, если ничего нет)
-  int receiveData(byte* buffer, int maxSize) {
+  int receiveData(byte* buffer, int maxSize)
+  {
     int packetSize = Udp.parsePacket();
-    if (packetSize && packetSize <= maxSize) {
+    if (packetSize && packetSize <= maxSize)
+    {
       Udp.read(buffer, packetSize);
-      if (strncmp((char*)buffer, magicString, strlen(magicString)) != 0) {
+      if (strncmp((char*)buffer, magicString, strlen(magicString)) != 0)
         return packetSize;
-      }
     }
     return 0;
   }
 
-  // Получение IP партнера
-  IPAddress getTargetIP() {
+  IPAddress getTargetIP()
+  {
     return targetIP;
   }
 
-  // Поддержание DHCP
-  void maintain() {
+  void maintain() //Обновление DHCP
+  {
     Ethernet.maintain();
   }
 };
