@@ -183,16 +183,21 @@ public:
   }
 };
 
+#define USE_DHCP false
+
 class DataTransmitter {
 private:
-  byte mac[6];
+  uint8_t mac[6];
   IPAddress targetIP;
   EthernetUDP Udp;
   const char* magicString;
   size_t magicStringLength;
   unsigned int port;
-
+#if not USE_DHCP
+  IPAddress ip;
+#endif
 public:
+#if USE_DHCP
   DataTransmitter(const byte* mac, unsigned int port, const char* magicString) 
     : targetIP(255, 255, 255, 255) 
     {
@@ -212,7 +217,27 @@ public:
     }
     LOG_INFO("Создан класс DataTransmitter");
   }
-
+#else
+  DataTransmitter(const byte* mac, unsigned int port, IPAddress ip, const char* magicString) 
+    : targetIP(255, 255, 255, 255), ip(ip)
+    {
+    this->port = port;
+    this->magicString = magicString;
+    if(magicString != nullptr)
+      magicStringLength = strlen(magicString);
+    if(mac != nullptr)
+    {
+      for (char i = 0; i < 6; ++i) 
+        this->mac[i] = mac[i];
+    }
+    else
+    {
+      for (char i = 0; i < 6; ++i) 
+        this->mac[i] = 0;
+    }
+    LOG_INFO("Создан класс DataTransmitter");
+  }
+#endif
   bool isValid()
   {
     if(magicString == nullptr)
@@ -230,11 +255,19 @@ public:
     return !isValid();
     SPI.begin();
     SPI.setClockDivider(SPI_CLOCK_DIV2);
+#if USE_DHCP
     if (Ethernet.begin(mac) == 0)
     {
       LOG_ERROR("Ошибка DHCP");
       return 1;
     }
+#else
+    if (Ethernet.begin(mac, ip) == 0)
+    {
+      LOG_ERROR("Ошибка DHCP");
+      return 1;
+    }
+#endif
     if (!Udp.begin(port))
     {
       LOG_ERROR("Ошибка открытия UDP-порта");
@@ -254,9 +287,15 @@ public:
     LOG_INFO("Пакет отправлен");
     return 0;
   }
+  int sendData(const char* data)
+  {
+    sendData((const byte*)data, strlen(data));
+  }
 
   size_t receiveData(byte* buffer, int maxSize)
   {
+    if(buffer == nullptr)
+    return 0;
     int packetSize = Udp.parsePacket();
     if ((packetSize < 1) || packetSize > maxSize || packetSize < magicStringLength + 1)
       return 0;
@@ -277,20 +316,38 @@ public:
   {
     return targetIP;
   }
-
+#if not USE_DHCP
   void maintain() //Обновление DHCP
   {
     LOG_INFO("Обновление DHCP");
     Ethernet.maintain();
   }
+#endif
 };
+
+byte mac1[] = {10, 10, 10, 10, 10, 10};
+byte mac2[] = {10, 10, 10, 10, 10, 11};
+
+IPAddress ip1(192,168,1,2);
+IPAddress ip2(192,168,1,3);
 
 void setup() {
 #if DEBUG_LEVEL > 0
   Serial.begin(9600);
 #endif
-  // put your setup code here, to run once:
-
+  DataTransmitter transmitter(mac1, 80, ip1, "tester");
+  byte buf[64];
+  while(1)
+  {
+    delay(100);
+    transmitter.sendData("hello world!");
+    delay(100);
+    size_t size = transmitter.receiveData(buf, 64);
+    if(size > 0)
+    {
+      LOG_INFO((const char*)buf);
+    }
+  }
 }
 
 void loop() {
