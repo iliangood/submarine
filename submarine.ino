@@ -2,6 +2,34 @@
 #include <Ethernet.h>
 #include <EthernetUdp.h>
 
+#define DEBUG_LEVEL_NOTHING 0
+#define DEBUG_LEVEL_ERRORS 1
+#define DEBUG_LEVEL_WARNINGS 2
+#define DEBUG_LEVEL_INFO 3
+
+#define DEBUG_LEVEL DEBUG_LEVEL_INFO
+
+#define LOG_ERROR(...) do { \
+    if (DEBUG_LEVEL >= DEBUG_LEVEL_ERRORS) { \
+        Serial.print("[ERROR] "); \
+        Serial.println(__VA_ARGS__); \
+    } \
+} while (0)
+
+#define LOG_WARNING(...) do { \
+    if (DEBUG_LEVEL >= DEBUG_LEVEL_WARNINGS) { \
+        Serial.print("[WARNING] "); \
+        Serial.println(__VA_ARGS__); \
+    } \
+} while (0)
+
+#define LOG_INFO(...) do { \
+    if (DEBUG_LEVEL >= DEBUG_LEVEL_INFO) { \
+        Serial.print("[INFO] "); \
+        Serial.println(__VA_ARGS__); \
+    } \
+} while (0)
+
 const char* magicString = "Submarine";
 
 #define clamp(num, minV, maxV) (max(min((num), (maxV)), (minV)))
@@ -160,155 +188,89 @@ private:
   byte mac[6];
   IPAddress targetIP;
   EthernetUDP Udp;
-  EthernetClient tcpClient;
-  EthernetServer tcpServer;
   const char* magicString;
+  size_t magicStringLength;
   unsigned int port;
-  bool isMaster;
 
 public:
-  DataTransmitter(const byte* mac, unsigned int port, const char* magicString, bool master = false) 
-    : targetIP(0, 0, 0, 0), tcpServer(port), isMaster(master) 
+  DataTransmitter(const byte* mac, unsigned int port, const char* magicString) 
+    : targetIP(255, 255, 255, 255) 
     {
     this->port = port;
     this->magicString = magicString;
-    for (char i = 0; i < 6; ++i) 
-      this->mac[i] = mac[i];
-  }
-
-
-  IPAddress sendDiscoveryBroadcast()
-  {
-    Udp.beginPacket(IPAddress(255, 255, 255, 255), port);
-    Udp.write(magicString);
-    Udp.write((const uint8_t*)&Ethernet.localIP(), 4);
-    Udp.endPacket();
-    return Ethernet.localIP();
-  }
-
-  IPAddress checkDiscoveryPackets() 
-  {
-    IPAddress noPartner(0, 0, 0, 0);
-    int packetSize = Udp.parsePacket();
-    if (packetSize) 
+    if(magicString != nullptr)
+      magicStringLength = strlen(magicString);
+    if(mac != nullptr)
     {
-      char buffer[packetSize];
-      Udp.read(buffer, packetSize);
-      if (strncmp(buffer, magicString, strlen(magicString)) == 0) 
-      {
-        IPAddress receivedIP;
-        memcpy(&receivedIP, buffer + strlen(magicString), 4);
-        if (receivedIP != Ethernet.localIP()) 
-          return targetIP = receivedIP;
-      }
+      for (char i = 0; i < 6; ++i) 
+        this->mac[i] = mac[i];
     }
-    return noPartner;
+    else
+    {
+      for (char i = 0; i < 6; ++i) 
+        this->mac[i] = 0;
+    }
+    LOG_INFO("Создан класс DataTransmitter");
   }
 
-  int initSlave()
+  bool isValid()
   {
+    if(magicString == nullptr)
+      return false;
+    bool res = false;
+    for(char i = 0; i < 6; ++i)
+      res = res || mac[i];
+    if(!res)
+      return false;
+    return true;
+  }
+
+  int init()
+  {
+    return !isValid();
     SPI.begin();
     SPI.setClockDivider(SPI_CLOCK_DIV2);
     if (Ethernet.begin(mac) == 0)
     {
-      Serial.println("Ошибка DHCP");
+      LOG_ERROR("Ошибка DHCP");
       return 1;
     }
-    Serial.println(Ethernet.localIP());
     if (!Udp.begin(port))
     {
-      Serial.println("Ошибка открытия UDP-порта");
+      LOG_ERROR("Ошибка открытия UDP-порта");
       return 1;
     }
     return 0;
   }
 
-  int initMaster() 
+  int sendData(const byte* data, int dataSize)
   {
-    SPI.begin();
-    SPI.setClockDivider(SPI_CLOCK_DIV2);
-    if (Ethernet.begin(mac) == 0) 
-    {
-      Serial.println("Ошибка DHCP");
+    if(data == nullptr)
       return 1;
-    }
-    Serial.println(Ethernet.localIP());
-    if (!Udp.begin(port)) 
-    {
-      Serial.println("Ошибка открытия UDP-порта");
-      return 1;
-    }
-    tcpServer.begin();
+    Udp.beginPacket(targetIP, port);
+    Udp.write(magicString);
+    Udp.write(data, dataSize);
+    Udp.endPacket();
+    LOG_INFO("Пакет отправлен");
     return 0;
   }
 
-  bool confirmConnection() {
-    if (targetIP == IPAddress(0, 0, 0, 0)) {
-      return false;
-    }
-    if (isMaster) {
-      EthernetClient client = tcpServer.available();
-      if (client) {
-        client.write("ACK");
-        client.stop();
-        return true;
-      }
-      return false;
-    } else
-    {
-      if (tcpClient.connect(targetIP, port))
-      {
-        char buffer[4];
-        int len = tcpClient.read((uint8_t*)buffer, 4);
-        if (len > 0 && strncmp(buffer, "ACK", 3) == 0)
-        {
-          tcpClient.stop();
-          return true;
-        }
-        tcpClient.stop();
-      }
-      return false;
-    }
-  }
-
-  IPAddress discoverTarget()
-  {
-    static unsigned long lastBroadcastTime = 0;
-    const unsigned long broadcastInterval = 5000;
-    IPAddress noPartner(0, 0, 0, 0);
-
-    if (millis() - lastBroadcastTime > broadcastInterval) 
-    {
-      sendDiscoveryBroadcast();
-      lastBroadcastTime = millis();
-    }
-
-    IPAddress foundIP = checkDiscoveryPackets();
-    if (confirmConnection() && foundIP != noPartner)
-      return foundIP;
-    return noPartner;
-  }
-
-  void sendData(const byte* data, int dataSize)
-  {
-    if (targetIP != IPAddress(0, 0, 0, 0))
-    {
-      Udp.beginPacket(targetIP, port);
-      Udp.write(data, dataSize);
-      Udp.endPacket();
-    }
-  }
-
-  int receiveData(byte* buffer, int maxSize)
+  size_t receiveData(byte* buffer, int maxSize)
   {
     int packetSize = Udp.parsePacket();
-    if (packetSize && packetSize <= maxSize)
-    {
-      Udp.read(buffer, packetSize);
-      if (strncmp((char*)buffer, magicString, strlen(magicString)) != 0)
-        return packetSize;
-    }
-    return 0;
+    if ((packetSize < 1) || packetSize > maxSize || packetSize < magicStringLength + 1)
+      return 0;
+    Udp.read(buffer, packetSize);
+    if (strncmp((char*)buffer, magicString, magicStringLength) != 0)
+      return 0;
+#if DEBUG_LEVEL >= DEBUG_LEVEL_INFO
+    if(targetIP != Udp.remoteIP())
+      LOG_INFO("IP аддресс удаленного устройства обновлен");
+#endif
+    targetIP = Udp.remoteIP();
+    memmove(buffer, &buffer[magicStringLength+1], packetSize - magicStringLength - 1);
+    LOG_INFO("Пакет получен");
+    return packetSize - magicStringLength - 1;
   }
 
   IPAddress getTargetIP()
@@ -318,11 +280,15 @@ public:
 
   void maintain() //Обновление DHCP
   {
+    LOG_INFO("Обновление DHCP");
     Ethernet.maintain();
   }
 };
 
 void setup() {
+#if DEBUG_LEVEL > 0
+  Serial.begin(9600);
+#endif
   // put your setup code here, to run once:
 
 }
