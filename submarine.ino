@@ -6,8 +6,9 @@
 #define DEBUG_LEVEL_ERRORS 1
 #define DEBUG_LEVEL_WARNINGS 2
 #define DEBUG_LEVEL_INFO 3
+#define DEBUG_LEVEL_VERBOSE 4
 
-#define DEBUG_LEVEL DEBUG_LEVEL_INFO
+#define DEBUG_LEVEL DEBUG_LEVEL_VERBOSE
 
 #define LOG_ERROR(...) do { \
     if (DEBUG_LEVEL >= DEBUG_LEVEL_ERRORS) { \
@@ -30,9 +31,17 @@
     } \
 } while (0)
 
-const char* magicString = "Submarine";
+#define LOG_VERBOSE(...) do { \
+    if (DEBUG_LEVEL >= DEBUG_LEVEL_VERBOSE) { \
+        Serial.print("[VERBOSE] "); \
+        Serial.println(__VA_ARGS__); \
+    } \
+} while (0)
 
 #define clamp(num, minV, maxV) (max(min((num), (maxV)), (minV)))
+
+const char* magicString = "Submarine";
+
 
 enum class AxisesNames
 {
@@ -189,6 +198,7 @@ class DataTransmitter {
 private:
   uint8_t mac[6];
   IPAddress targetIP;
+  bool lockTargetIP;
   EthernetUDP Udp;
   const char* magicString;
   size_t magicStringLength;
@@ -199,7 +209,7 @@ private:
 public:
 #if USE_DHCP
   DataTransmitter(const byte* mac, unsigned int port, const char* magicString) 
-    : targetIP(255, 255, 255, 255) 
+    : targetIP(255, 255, 255, 255), lockTargetIP(false)
     {
     this->port = port;
     this->magicString = magicString;
@@ -221,7 +231,7 @@ public:
   }
 #else
   DataTransmitter(const byte* mac, unsigned int port, IPAddress ip, const char* magicString) 
-    : targetIP(255, 255, 255, 255), ip(ip)
+    : targetIP(255, 255, 255, 255), ip(ip), lockTargetIP(false)
     {
     this->port = port;
     this->magicString = magicString;
@@ -242,6 +252,16 @@ public:
     LOG_INFO("Создан класс DataTransmitter");
   }
 #endif
+  void setLockTargetIP(bool lock)
+  {
+    lockTargetIP = lock;
+  }
+  void setTargetIP(IPAddress targetIP, bool lockTargetIP = true)
+  {
+    this->targetIP = targetIP;
+    setLockTargetIP(lockTargetIP);
+  }
+
   bool isValid()
   {
     if(magicString == nullptr)
@@ -292,16 +312,25 @@ public:
   }
   int sendData(const char* data)
   {
-    return sendData((const byte*)data, strlen(data));
+    return sendData((const byte*)data, strlen(data)+1);
   }
 
   size_t receiveData(byte* buffer, int maxSize)
   {
+    LOG_VERBOSE("Попытка получения пакета");
     if(buffer == nullptr)
     return 0;
     int packetSize = Udp.parsePacket();
     if ((packetSize < 1) || packetSize < magicStringLength)
+    {
+      LOG_VERBOSE("Некоректный размер пакета или его отсутствие");
       return 0;
+    }
+    if(Udp.remoteIP() == Ethernet.localIP())
+    {
+      LOG_INFO("Получен свой же пакет - игнорирование пакета");
+      return 0;
+    }
     if(packetSize > maxSize)
     {
       LOG_WARNING("Пакет проигнорирован, из-за того, что слишком большой");
@@ -309,12 +338,16 @@ public:
     }
     Udp.read(buffer, packetSize);
     if (strncmp((char*)buffer, magicString, magicStringLength) != 0)
+    {
+      LOG_WARNING("В пакете нет магической строки");
       return 0;
+    }
 #if DEBUG_LEVEL >= DEBUG_LEVEL_INFO
-    if(targetIP != Udp.remoteIP())
+    if(targetIP != Udp.remoteIP() && !lockTargetIP)
       LOG_INFO("IP аддресс удаленного устройства обновлен");
 #endif
-    targetIP = Udp.remoteIP();
+    if(!lockTargetIP)
+      targetIP = Udp.remoteIP();
     memmove(buffer, &buffer[magicStringLength], packetSize - magicStringLength);
     LOG_INFO("Пакет получен");
     return packetSize - magicStringLength;
@@ -345,6 +378,11 @@ void setup() {
 #endif
   DataTransmitter transmitter(mac1, 80, ip1, "tester");
   byte buf[64];
+  if (transmitter.init() != 0)
+  {
+    LOG_ERROR("Init failed");
+    while(1);
+  }
   while(1)
   {
     delay(100);
