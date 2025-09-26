@@ -205,6 +205,8 @@ public:
     this->magicString = magicString;
     if(magicString != nullptr)
       magicStringLength = strlen(magicString);
+    else
+      magicStringLength = 0;
     if(mac != nullptr)
     {
       for (char i = 0; i < 6; ++i) 
@@ -225,6 +227,8 @@ public:
     this->magicString = magicString;
     if(magicString != nullptr)
       magicStringLength = strlen(magicString);
+    else
+      magicStringLength = 0;
     if(mac != nullptr)
     {
       for (char i = 0; i < 6; ++i) 
@@ -252,9 +256,12 @@ public:
 
   int init()
   {
-    return !isValid();
+    if(!isValid())
+      return 1;
     SPI.begin();
+#if defined SPI_CLOCK_DIV2
     SPI.setClockDivider(SPI_CLOCK_DIV2);
+#endif
 #if USE_DHCP
     if (Ethernet.begin(mac) == 0)
     {
@@ -262,11 +269,7 @@ public:
       return 1;
     }
 #else
-    if (Ethernet.begin(mac, ip) == 0)
-    {
-      LOG_ERROR("Ошибка DHCP");
-      return 1;
-    }
+    Ethernet.begin(mac, ip);
 #endif
     if (!Udp.begin(port))
     {
@@ -281,7 +284,7 @@ public:
     if(data == nullptr)
       return 1;
     Udp.beginPacket(targetIP, port);
-    Udp.write(magicString);
+    Udp.write(magicString, magicStringLength);
     Udp.write(data, dataSize);
     Udp.endPacket();
     LOG_INFO("Пакет отправлен");
@@ -289,7 +292,7 @@ public:
   }
   int sendData(const char* data)
   {
-    sendData((const byte*)data, strlen(data));
+    return sendData((const byte*)data, strlen(data));
   }
 
   size_t receiveData(byte* buffer, int maxSize)
@@ -297,8 +300,13 @@ public:
     if(buffer == nullptr)
     return 0;
     int packetSize = Udp.parsePacket();
-    if ((packetSize < 1) || packetSize > maxSize || packetSize < magicStringLength + 1)
+    if ((packetSize < 1) || packetSize < magicStringLength)
       return 0;
+    if(packetSize > maxSize)
+    {
+      LOG_WARNING("Пакет проигнорирован, из-за того, что слишком большой");
+      return 0;
+    }
     Udp.read(buffer, packetSize);
     if (strncmp((char*)buffer, magicString, magicStringLength) != 0)
       return 0;
@@ -307,9 +315,9 @@ public:
       LOG_INFO("IP аддресс удаленного устройства обновлен");
 #endif
     targetIP = Udp.remoteIP();
-    memmove(buffer, &buffer[magicStringLength+1], packetSize - magicStringLength - 1);
+    memmove(buffer, &buffer[magicStringLength], packetSize - magicStringLength);
     LOG_INFO("Пакет получен");
-    return packetSize - magicStringLength - 1;
+    return packetSize - magicStringLength;
   }
 
   IPAddress getTargetIP()
