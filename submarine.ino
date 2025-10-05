@@ -1,47 +1,6 @@
-#include <SPI.h>
-#include <Ethernet.h>
-#include <EthernetUdp.h>
-
-#define DEBUG_LEVEL_NOTHING 0
-#define DEBUG_LEVEL_ERRORS 1
-#define DEBUG_LEVEL_WARNINGS 2
-#define DEBUG_LEVEL_INFO 3
-#define DEBUG_LEVEL_VERBOSE 4
-
-#define DEBUG_LEVEL DEBUG_LEVEL_VERBOSE
-
-#define LOG_ERROR(...) do { \
-    if (DEBUG_LEVEL >= DEBUG_LEVEL_ERRORS) { \
-        Serial.print("[ERROR] "); \
-        Serial.println(__VA_ARGS__); \
-    } \
-} while (0)
-
-#define LOG_WARNING(...) do { \
-    if (DEBUG_LEVEL >= DEBUG_LEVEL_WARNINGS) { \
-        Serial.print("[WARNING] "); \
-        Serial.println(__VA_ARGS__); \
-    } \
-} while (0)
-
-#define LOG_INFO(...) do { \
-    if (DEBUG_LEVEL >= DEBUG_LEVEL_INFO) { \
-        Serial.print("[INFO] "); \
-        Serial.println(__VA_ARGS__); \
-    } \
-} while (0)
-
-#define LOG_VERBOSE(...) do { \
-    if (DEBUG_LEVEL >= DEBUG_LEVEL_VERBOSE) { \
-        Serial.print("[VERBOSE] "); \
-        Serial.println(__VA_ARGS__); \
-    } \
-} while (0)
-
-#define clamp(num, minV, maxV) (max(min((num), (maxV)), (minV)))
-
-const char* magicString = "Submarine";
-
+#include <easyEthernetLib.h>
+#include <message.h>
+#include <utils.h>
 
 enum class AxisesNames
 {
@@ -114,6 +73,7 @@ class Motor
   int16_t power;
   Axises axises;
 public:
+  Motor(){}
   Motor(const Axises& axises, char pin)
   {
     pinMode(pin, OUTPUT);
@@ -202,30 +162,32 @@ IPAddress ip1(192,168,1,2);
 IPAddress ip2(192,168,1,3);
 
 void setup() {
-#if DEBUG_LEVEL > 0
   Serial.begin(9600);
-#endif
-  DataTransmitter transmitter(mac1, 80, ip1, "tester");
-  byte buf[64];
-  if (transmitter.init() != 0)
+  DataTransmitter transmitter(mac1, 80, "submarine");
+  message<64> receiveBuf;
+  if (transmitter.init(ip1) != 0)
   {
-    LOG_ERROR("Init failed");
+    DEBUG_ERROR("Init failed");
     while(1);
   }
+  MotorController<6> motors(
+    Motor(Axises(100, 100, 100, 100, 100, 100), 1), //TODO: Пока тут временные значения
+    Motor(Axises(100, 100, 100, 100, 100, 100), 1),
+    Motor(Axises(100, 100, 100, 100, 100, 100), 1),
+    Motor(Axises(100, 100, 100, 100, 100, 100), 1),
+    Motor(Axises(100, 100, 100, 100, 100, 100), 1),
+    Motor(Axises(100, 100, 100, 100, 100, 100), 1));
   while(1)
   {
-    delay(100);
-    transmitter.sendData("hello world!");
-    delay(100);
-    size_t size = transmitter.receiveData(buf, 64);
-    if(size > 0)
+    transmitter.receiveData(&receiveBuf);
+    if(receiveBuf.getSize() == sizeof(Axises))
     {
-      LOG_INFO((const char*)buf);
+      motors.setAcceleration(*(Axises*)receiveBuf.getData());
     }
+    receiveBuf.clear();
   }
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
 
 }
