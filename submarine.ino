@@ -183,6 +183,7 @@ void setup() {
   Serial.begin(9600);
   DataTransmitter transmitter(mac1, 80, "submarine");
   message<64> receiveBuf;
+  message<64> transmittBuf;
   if (transmitter.init(ip1) != 0)
   {
     DEBUG_ERROR("Init failed");
@@ -203,6 +204,8 @@ void setup() {
       motors.setAcceleration(*(Axises*)receiveBuf.getData());
     }
     receiveBuf.clear();
+    transmittBuf.push("temp");
+    transmitter.sendData(transmittBuf);
   }
 }
 
