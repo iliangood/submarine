@@ -189,7 +189,7 @@ void setup() {
   message<64> transmittBuf;
   if (transmitter.init(ip) != 0)
   {
-    DEBUG_ERROR("Init failed");
+    DEBUG_ERROR("transmitter init failed");
     while(1);
   }
   MotorController<6> motors(
