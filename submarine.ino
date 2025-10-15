@@ -74,10 +74,10 @@ class Motor
   int16_t currentPower;
   Axises axises;
   uint32_t lastUpdate;
-  uint stepMS;
+  unsigned int stepMS;
 public:
   Motor(){}
-  Motor(const Axises& axises, char pin, uint stepMS = 2)
+  Motor(const Axises& axises, char pin, unsigned int stepMS = 2)
   {
     pinMode(pin, OUTPUT);
     this->axises = axises;
@@ -88,9 +88,14 @@ public:
     lastUpdate = millis();
   }
 
-  int16_t getPower() const
+  int16_t getTargetPower() const
   {
-    return power;
+    return currentPower;
+  }
+
+  int16_t getCurrentPower() const
+  {
+    return targetPower;
   }
 
   int16_t setPower(int16_t power)
@@ -112,7 +117,7 @@ public:
 
   bool update()
   {
-    currentPower += min(targetPower - currentPower, (millis() - lastUpdate) / stepMS)
+    currentPower += min(targetPower - currentPower, (millis() - lastUpdate) / stepMS);
     analogWrite(pin, map(currentPower, -256, 256, 0, 255));
     return targetPower == currentPower;
   }
@@ -173,18 +178,16 @@ public:
 
 
 
-byte mac1[] = {10, 10, 10, 10, 10, 10};
-byte mac2[] = {10, 10, 10, 10, 10, 11};
+byte mac[] = {10, 10, 10, 10, 10, 10};
 
-IPAddress ip1(192,168,1,2);
-IPAddress ip2(192,168,1,3);
+IPAddress ip(192,168,1,2);
 
 void setup() {
   Serial.begin(9600);
-  DataTransmitter transmitter(mac1, 80, "submarine");
+  DataTransmitter transmitter(mac, 80, "submarine");
   message<64> receiveBuf;
   message<64> transmittBuf;
-  if (transmitter.init(ip1) != 0)
+  if (transmitter.init(ip) != 0)
   {
     DEBUG_ERROR("Init failed");
     while(1);
