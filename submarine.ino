@@ -70,16 +70,22 @@ public:
 class Motor
 {
   char pin;
-  int16_t power;
+  int16_t targetPower;
+  int16_t currentPower;
   Axises axises;
+  uint32_t lastUpdate;
+  uint stepMS;
 public:
   Motor(){}
-  Motor(const Axises& axises, char pin)
+  Motor(const Axises& axises, char pin, uint stepMS = 2)
   {
     pinMode(pin, OUTPUT);
     this->axises = axises;
     this->pin = pin;
-    power = 0;
+    this->stepMS = stepMS;
+    targetPower = 0;
+    currentPower = 0;
+    lastUpdate = millis();
   }
 
   int16_t getPower() const
@@ -89,8 +95,8 @@ public:
 
   int16_t setPower(int16_t power)
   {
-    power = clamp(power, -256, 256);
-    analogWrite(pin, map(power, -256, 256, 0, 255));
+    targetPower = clamp(power, -256, 256);
+    
     return power;
   }
 
@@ -102,6 +108,13 @@ public:
       resPower += clamp(axises[i] * this->axises[i], -256, 256);
     }
     return resPower;
+  }
+
+  bool update()
+  {
+    currentPower += min(targetPower - currentPower, (millis() - lastUpdate) / stepMS)
+    analogWrite(pin, map(currentPower, -256, 256, 0, 255));
+    return targetPower == currentPower;
   }
 
 };
@@ -128,6 +141,11 @@ public:
       motors[i] = va_arg(args, Motor);
     }
     va_end(args);
+  }
+
+  Motor& operator[](size_t index)
+  {
+    return motors[index];
   }
 
   void setAcceleration(const Axises& axises)
