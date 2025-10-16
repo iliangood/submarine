@@ -1,3 +1,5 @@
+#if !defined (AXIS_H)
+#define AXIS_H
 #include <utils.h>
 
 enum class AxisesNames
@@ -32,3 +34,5 @@ public:
 
     int getAxis(int axis) const;
 };
+
+#endif
