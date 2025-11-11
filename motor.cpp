@@ -1,47 +1,52 @@
+#include <inttypes.h>
 #include "motor.h"
 
+#include <utils.h>
+
+#include <Arduino.h>
+
 Motor::Motor(){}
-Motor::Motor(const Axises& axises, char pin, unsigned int stepMS = 2)
+Motor::Motor(const Axises& axises, char pin, unsigned int stepMS, unsigned int stepPower)
 {
   pinMode(pin, OUTPUT);
-  this->axises = axises;
-  this->pin = pin;
-  this->stepMS = stepMS;
-  targetPower = 0;
-  currentPower = 0;
-  lastUpdate = millis();
+  axises_ = axises;
+  pin_ = pin;
+  stepMS_ = stepMS;
+  stepPower_ = stepPower;
+  targetPower_ = 0;
+  currentPower_ = 0;
+  lastUpdate_ = millis();
 }
 
 int16_t Motor::getTargetPower() const
 {
-  return currentPower;
+  return targetPower_;
 }
 
 int16_t Motor::getCurrentPower() const
 {
-  return targetPower;
+  return currentPower_;
 }
 
 int16_t Motor::setPower(int16_t power)
 {
-  targetPower = clamp(power, -256, 256);
-  
+  targetPower_ = power;
   return power;
 }
 
-int16_t Motor::getRequiredPower(const Axises& axises) const
+int32_t Motor::getRequiredPower(const Axises& axises) const
 {
-  int16_t resPower = 0;
+  int32_t resPower = 0;
   for(char i = 0; i < 6; ++i)
   {
-    resPower += clamp(axises[i] * this->axises[i], -256, 256);
+    resPower += axises[i] * axises_[i];
   }
   return resPower;
 }
 
 bool Motor::update()
 {
-  currentPower += min(targetPower - currentPower, (millis() - lastUpdate) / stepMS);
-  analogWrite(pin, map(currentPower, -256, 256, 0, 255));
-  return targetPower == currentPower;
+  currentPower_ += min(targetPower_ - currentPower_, (millis() - lastUpdate_) / stepMS_ * stepPower_);
+  analogWrite(pin_, map(currentPower_, INT16_MIN, INT16_MAX, 0, 255));
+  return targetPower_ == currentPower_;
 }

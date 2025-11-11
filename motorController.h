@@ -1,5 +1,8 @@
+#include "HardwareSerial.h"
+#include <avr/interrupt.h>
 #if !defined (MOTOR_CONTROLLER_H)
 #define MOTOR_CONTROLLER_H
+#include <inttypes.h>
 #include "motor.h"
 
 template<size_t N>
@@ -21,6 +24,8 @@ public:
     va_start(args, N);
     for (size_t i = 0; i < N; ++i) 
     {
+      Serial.print("init motor:");
+
       motors[i] = va_arg(args, Motor);
     }
     va_end(args);
@@ -33,18 +38,19 @@ public:
 
   void setAcceleration(const Axises& axises)
   {
-    int16_t motorsPower[N];
-    uint16_t maxValue = 0;
+    int32_t motorsPower[N];
+    uint32_t maxValue = 0;
     for(unsigned int i = 0; i < N; ++i)
     {
       maxValue = max(abs(motorsPower[i] = motors[i].getRequiredPower(axises)), maxValue);
     }
-    if(maxValue > 256)
+    if(maxValue > INT16_MAX)
     {
       for(unsigned int i = 0; i < N; ++i)
       {
-        motors[i].setPower(((static_cast<int32_t>(motorsPower[i])) * 256) / maxValue);
+        motors[i].setPower(((static_cast<int32_t>(motorsPower[i])) * INT16_MAX) / maxValue);
       }
+      return;
     }
     for(unsigned int i = 0; i < N; ++i)
     {
