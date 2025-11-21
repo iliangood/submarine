@@ -24,8 +24,6 @@ public:
     va_start(args, N);
     for (size_t i = 0; i < N; ++i) 
     {
-      Serial.print("init motor:");
-
       motors[i] = va_arg(args, Motor);
     }
     va_end(args);
