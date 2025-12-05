@@ -38,6 +38,17 @@ struct ControllerPacket
 	}
 };
 
+struct ControllerPacketBuffer
+{
+private:
+	uint8_t buf[ControllerPacket::serializedSize()];
+public:
+	uint8_t* get()
+	{
+		return reinterpret_cast<uint8_t*>(this);
+	}
+};
+
 struct SubmarinePacket
 {
 	uint64_t sendTime_ms;

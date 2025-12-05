@@ -1,4 +1,4 @@
-#include <Arduino_DebugUtils.h>
+//#include <Arduino_DebugUtils.h>
 
 #include <easyEthernetLib.h>
 #include <message.h>
@@ -12,16 +12,24 @@
 
 byte mac[] = {10, 10, 10, 10, 10, 10};
 
-IPAddress ip(10,168,1,75);
+IPAddress ip(192,168,1,75);
 
 void setup() {
   Serial.begin(115200);
+
+  //Debug.setDebugLevel(DBG_VERBOSE);
+  //Debug.setDebugLevel(DBG_WARNING);
   
+  uint64_t last_packet_rx_time_message = 0;
+  uint64_t lostPackets = 0;
+  uint64_t lastPacketCount = 0;
+  uint64_t sendCounter = 0;
+
   DataTransmitter transmitter(mac, 56728, "submarine");
   message<64> msg;
   if (transmitter.init(ip) != 0)
   {
-    DEBUG_ERROR("transmitter init failed");
+    //DEBUG_ERROR("transmitter init failed");
     while(1);
   }
   Serial.println("transmitter inited");
@@ -34,6 +42,7 @@ void setup() {
     Motor(Axises(130, 131, 132, 133, 134, 135), 1));
   while(1)
   {
+    Serial.println("Попытка получения пакета");
     receiveInfo rci = transmitter.receiveData(&msg);
     if(msg.getSize() > 0)
     {
@@ -50,9 +59,10 @@ void setup() {
       Serial.print("size should be:");
       Serial.println(ControllerPacket::serializedSize());
     }
-    if(msg.getSize() == ControllerPacket::serializedSize())
+    if(msg.getSize() > ControllerPacket::serializedSize())
     {
-      ControllerPacket packet = msg.read<ControllerPacket>();
+      ControllerPacketBuffer packetBuf = msg.read<ControllerPacketBuffer>();
+      ControllerPacket packet = ControllerPacket::deserialize(packetBuf.get());
       Serial.print(packet.speedTarget[0]);
       Serial.print(' ');
       Serial.print(packet.speedTarget[1]);
@@ -65,16 +75,27 @@ void setup() {
       Serial.print(' ');
       Serial.print(packet.speedTarget[5]);
       Serial.print('\n');
+      last_packet_rx_time_message = packet.sendTime_ms;
+      Serial.print("packet.sendTime_ms:");
+      Serial.println((uint32_t)packet.sendTime_ms);
+      Serial.print("lost packets:");
+      uint64_t packetCount = msg.read<uint64_t>();
+      Serial.println((uint32_t)(lostPackets += packetCount - lastPacketCount - 1));
+      lastPacketCount = packetCount;
     }
+    
     msg.clear();
     msg.push(SubmarinePacket{
       static_cast<uint64_t>(millis()),
-      static_cast<uint64_t>(0),
+      static_cast<uint64_t>(last_packet_rx_time_message),
       Axises(),
       Axises()
     });
+    msg.push(sendCounter);
+  
     transmitter.sendData(msg);
     msg.clear();
+
     delay(5);
   }
 }
