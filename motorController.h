@@ -1,35 +1,35 @@
-#include "HardwareSerial.h"
-#include <avr/interrupt.h>
 #if !defined (MOTOR_CONTROLLER_H)
 #define MOTOR_CONTROLLER_H
+
+#include "HardwareSerial.h"
+#include <avr/interrupt.h>
+
 #include <inttypes.h>
 #include "motor.h"
+
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
+
+#include <assert.h>
 
 template<size_t N>
 class MotorController
 {
-  Motor motors[N];
+  Adafruit_PWMServoDriver pwm;
+  Motor<N> motors[N];
+  uint16_t freq;
 public:
-  MotorController(const Motor* motors)
+
+  MotorController(uint16_t freq = 1600) : freq(freq)
   {
-    for(unsigned int i = 0; i < N; ++i)
-    {
-      this->motors[i] = motors[i];
-    }
+    assert(freq <= 1600 && "freq out of range");
+    if(N > 16)
+      return;
+    pwm.begin();
+    pwm.setPWMFreq(freq);
   }
 
-  MotorController(...)
-  {
-    va_list args;
-    va_start(args, N);
-    for (size_t i = 0; i < N; ++i) 
-    {
-      motors[i] = va_arg(args, Motor);
-    }
-    va_end(args);
-  }
-
-  Motor& operator[](size_t index)
+  Motor<N>& operator[](size_t index)
   {
     return motors[index];
   }
