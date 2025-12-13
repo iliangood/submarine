@@ -18,6 +18,8 @@ class Motor
   unsigned int stepMS_;
   unsigned int stepPower_;
   MotorController<N>* motorController;
+
+  void writePower(int16_t power);
 public:
   Motor(){}
   Motor(const Axises& axises, char pin, unsigned int stepMS = 2, unsigned int stepPower = 256)
