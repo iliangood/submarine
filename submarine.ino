@@ -16,9 +16,6 @@ IPAddress ip(192,168,1,75);
 
 void setup() {
   Serial.begin(115200);
-
-  //Debug.setDebugLevel(DBG_VERBOSE);
-  //Debug.setDebugLevel(DBG_WARNING);
   
   uint64_t last_packet_rx_time_message = 0;
   uint64_t lostPackets = 0;
@@ -30,22 +27,20 @@ void setup() {
   message<64> msg;
   if (transmitter.init(ip) != 0)
   {
-    //DEBUG_ERROR("transmitter init failed");
+    Serial.println("transmitter init: FAIL");
     while(1);
   }
-  Serial.println("transmitter inited");
-  /*MotorController<6> motors(
-    Motor(Axises(100, 101, 102, 103, 104, 105), 1), //TODO: Пока тут временные значения
-    Motor(Axises(106, 107, 108, 109, 110, 111), 1),
-    Motor(Axises(112, 113, 114, 115, 116, 117), 1),
-    Motor(Axises(118, 119, 120, 121, 122, 123), 1),
-    Motor(Axises(124, 125, 126, 127, 128, 129), 1),
-    Motor(Axises(130, 131, 132, 133, 134, 135), 1));*/
+  //Serial.println("transmitter init: OK");
+  MotorController<6> controller;
+  controller[0].axises() = Axises(1, 2, 3, 4, 5, 6);
+  controller[1].axises() = Axises(7, 8, 9, 10, 11, 12);
+  controller[2].axises() = Axises(13, 14, 15, 16, 17, 18);
+  controller[3].axises() = Axises(19, 20, 21, 22, 23, 24);
+  controller[4].axises() = Axises(25, 26, 27, 28, 29, 30);
+  controller[5].axises() = Axises(31, 32, 33, 34, 35, 36);
   while(1)
   {
-    //Serial.println("Попытка получения пакета");
-    //Serial.println("bhwrewruruierfueruhrtubhwrewruruierfueruhrtubhwrewruruierfueruhrtubhwrewruruierfueruhrtu");
-    //delay(9);
+
     receiveInfo rci = transmitter.receiveData(&msg);
     if(msg.getSize() > 0)
     {
@@ -66,6 +61,8 @@ void setup() {
     {
       ControllerPacketBuffer packetBuf = msg.read<ControllerPacketBuffer>();
       ControllerPacket packet = ControllerPacket::deserialize(packetBuf.get());
+      controller.setAcceleration(packet.speedTarget);
+
       Serial.print(packet.speedTarget[0]);
       Serial.print(' ');
       Serial.print(packet.speedTarget[1]);

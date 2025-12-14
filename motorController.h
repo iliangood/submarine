@@ -18,15 +18,20 @@ class MotorController
   Adafruit_PWMServoDriver pwm;
   Motor<N> motors[N];
   uint16_t freq;
+
+  friend Motor<N>;
 public:
 
-  MotorController(uint16_t freq = 1600) : freq(freq)
+  MotorController(uint16_t freq = 250, unsigned int stepMs = 1, unsigned int stepPower = 128) : freq(freq)
   {
-    assert(freq <= 1600 && "freq out of range");
-    if(N > 16)
-      return;
+    assert(freq <= 500 && "freq out of range");
+    assert(N <= 16 && "motor's count too big, should be no more then 16");
     pwm.begin();
     pwm.setPWMFreq(freq);
+    for(unsigned int i = 0; i < N; ++i)
+    {
+      motors[i] = Motor<N>(i, stepMs, stepPower);
+    }
   }
 
   Motor<N>& operator[](size_t index)
@@ -54,6 +59,12 @@ public:
     {
       motors[i].setPower(motorsPower[i]);
     }  
+  }
+  
+  void update()
+  {
+    for(int  i = 0; i < N; ++i)
+      motors[i].update();
   }
 };
 
