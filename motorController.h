@@ -42,7 +42,7 @@ public:
   void setAcceleration(const Axises& axises)
   {
     int32_t motorsPower[N];
-    uint32_t maxValue = 0;
+    int32_t maxValue = 0;
     for(unsigned int i = 0; i < N; ++i)
     {
       maxValue = max(abs(motorsPower[i] = motors[i].getRequiredPower(axises)), maxValue);

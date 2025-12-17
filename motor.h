@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 #include <limits.h>
+#include <utils.h>
 #include "axis.h"
 
 template<size_t N>
