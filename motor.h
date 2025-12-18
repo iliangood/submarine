@@ -19,16 +19,16 @@ class Motor
   uint32_t lastUpdate_;
   unsigned int stepMS_;
   unsigned int stepPower_;
-  MotorController<N>* motorController;
+  MotorController<N>* motorController_;
 
   void writePower(int16_t power)
   {
-    motorController->pwm.writeMicroseconds(pin_, map(power, INT16_MIN, INT16_MAX, 1000, 2000));
+    motorController_->pwm.writeMicroseconds(pin_, map(power, INT16_MIN, INT16_MAX, 1000, 2000));
   }
 public:
   Motor(){}
 
-  Motor(char pin, unsigned int stepMs = 1, unsigned int stepPower = 128) : pin_(pin), stepMS_(stepMs), stepPower_(stepPower) {}
+  Motor(char pin, MotorController<N>* controller, unsigned int stepMs = 1, unsigned int stepPower = 128) : pin_(pin), motorController_(controller), stepMS_(stepMs), stepPower_(stepPower) {}
 
   int16_t getTargetPower() const
   {

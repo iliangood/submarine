@@ -30,7 +30,7 @@ public:
     pwm.setPWMFreq(freq);
     for(unsigned int i = 0; i < N; ++i)
     {
-      motors[i] = Motor<N>(i, stepMs, stepPower);
+      motors[i] = Motor<N>(i, this, stepMs, stepPower);
     }
   }
 
