@@ -31,13 +31,20 @@ void setup() {
     while(1);
   }
   //Serial.println("transmitter init: OK");
-  MotorController<6> controller;
+  /*MotorController<6> controller;
   controller[0].axises() = Axises(1, 2, 3, 4, 5, 6);
   controller[1].axises() = Axises(7, 8, 9, 10, 11, 12);
   controller[2].axises() = Axises(13, 14, 15, 16, 17, 18);
   controller[3].axises() = Axises(19, 20, 21, 22, 23, 24);
   controller[4].axises() = Axises(25, 26, 27, 28, 29, 30);
-  controller[5].axises() = Axises(31, 32, 33, 34, 35, 36);
+  controller[5].axises() = Axises(31, 32, 33, 34, 35, 36);*/
+
+  Adafruit_PWMServoDriver pwm;
+
+  pwm.begin();
+  pwm.setPWMFreq(250);
+
+  uint32_t lastCycle = millis();
   while(1)
   {
 
@@ -61,7 +68,7 @@ void setup() {
     {
       ControllerPacketBuffer packetBuf = msg.read<ControllerPacketBuffer>();
       ControllerPacket packet = ControllerPacket::deserialize(packetBuf.get());
-      controller.setAcceleration(packet.speedTarget);
+      //controller.setAcceleration(packet.speedTarget);
 
       Serial.print(packet.speedTarget[0]);
       Serial.print(' ');
@@ -98,8 +105,9 @@ void setup() {
     msg.clear();
 
     }
-
-    delay(15);
+    pwm.writeMicroseconds(0, 1500);
+    delay(17 - millis() + lastCycle);
+    lastCycle = millis();
   }
 }
 
