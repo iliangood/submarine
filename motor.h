@@ -23,12 +23,16 @@ class Motor
 
   void writePower(int16_t power)
   {
+    /*Serial.print("write ");
+    Serial.print(map(power, INT16_MIN, INT16_MAX, 1000, 2000));
+    Serial.print(" to ");
+    Serial.println((int)pin_);*/
     motorController_->pwm.writeMicroseconds(pin_, map(power, INT16_MIN, INT16_MAX, 1000, 2000));
   }
 public:
   Motor(){}
 
-  Motor(char pin, MotorController<N>* controller, unsigned int stepMs = 1, unsigned int stepPower = 128) : pin_(pin), motorController_(controller), stepMS_(stepMs), stepPower_(stepPower) {}
+  Motor(char pin, MotorController<N>* controller, unsigned int stepMs = 1, unsigned int stepPower = 128) : pin_(pin), motorController_(controller), stepMS_(stepMs), stepPower_(stepPower), targetPower_(0), currentPower_(0), lastUpdate_(millis()) {}
 
   int16_t getTargetPower() const
   {
@@ -51,7 +55,7 @@ public:
     int32_t resPower = 0;
     for(char i = 0; i < 6; ++i)
     {
-      resPower += axises[i] * axises_[i];
+      resPower += static_cast<int32_t>(axises[i]) * axises_[i] / INT16_MAX;
     }
     return resPower;
   }
@@ -64,6 +68,7 @@ public:
     int16_t limiter = clamp((millis() - lastUpdate_) / stepMS_ * stepPower_, -INT16_MAX, INT16_MAX);
     currentPower_ += clamp(targetPower_ - currentPower_, -limiter, limiter);
     writePower(currentPower_);
+    lastUpdate_ = millis();
     return targetPower_ == currentPower_;
   }
 

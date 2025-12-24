@@ -22,10 +22,11 @@ class MotorController
   friend Motor<N>;
 public:
 
-  MotorController(uint16_t freq = 250, unsigned int stepMs = 1, unsigned int stepPower = 128) : freq(freq)
+  MotorController(uint16_t freq = 50, unsigned int stepMs = 1, unsigned int stepPower = 512) : freq(freq)
   {
     assert(freq <= 500 && "freq out of range");
     assert(N <= 16 && "motor's count too big, should be no more then 16");
+    Serial.println("PWM begin");
     pwm.begin();
     pwm.setPWMFreq(freq);
     for(unsigned int i = 0; i < N; ++i)
@@ -51,7 +52,7 @@ public:
     {
       for(unsigned int i = 0; i < N; ++i)
       {
-        motors[i].setPower(((static_cast<int32_t>(motorsPower[i])) * INT16_MAX) / maxValue);
+        motors[i].setPower(((static_cast<int64_t>(motorsPower[i])) * INT16_MAX) / maxValue);
       }
       return;
     }
