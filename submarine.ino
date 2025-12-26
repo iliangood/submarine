@@ -46,9 +46,9 @@ void setup() {
     //if()
     //Serial.println("cyclyng0");
     receiveInfo rci = transmitter.receiveData(&msg);
-    if(msg.getSize() > 0)
+    /*if(msg.getSize() > 0)
     {
-      /*Serial.print("get from:");
+      Serial.print("get from:");
       Serial.print(rci.remoteIP[0]);
       Serial.print('.');
       Serial.print(rci.remoteIP[1]);
@@ -59,8 +59,8 @@ void setup() {
       Serial.print("size:");
       Serial.println(msg.getSize());
       Serial.print("size should be:");
-      Serial.println(ControllerPacket::serializedSize());*/
-    }
+      Serial.println(ControllerPacket::serializedSize());
+    }*/
     
     if(msg.getSize() > ControllerPacket::serializedSize())
     {
@@ -68,7 +68,7 @@ void setup() {
       ControllerPacket packet = ControllerPacket::deserialize(packetBuf.get());
       controller.setAcceleration(packet.speedTarget);
 
-      Serial.print(packet.speedTarget[0]);
+      /*Serial.print(packet.speedTarget[0]);
       Serial.print(' ');
       Serial.print(packet.speedTarget[1]);
       Serial.print(' ');
@@ -79,7 +79,7 @@ void setup() {
       Serial.print(packet.speedTarget[4]);
       Serial.print(' ');
       Serial.print(packet.speedTarget[5]);
-      Serial.print('\n');
+      Serial.print('\n');*/
       last_packet_rx_time_message = packet.sendTime_ms;
       //Serial.print("packet.sendTime_ms:");
       //Serial.println((uint32_t)packet.sendTime_ms);

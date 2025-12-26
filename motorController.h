@@ -22,7 +22,7 @@ class MotorController
   friend Motor<N>;
 public:
 
-  MotorController(uint16_t freq = 50, unsigned int stepMs = 1, unsigned int stepPower = 512) : freq(freq)
+  MotorController(uint16_t freq = 50, unsigned int stepMs = 1, unsigned int stepPower = 32) : freq(freq)
   {
     assert(freq <= 500 && "freq out of range");
     assert(N <= 16 && "motor's count too big, should be no more then 16");
