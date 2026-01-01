@@ -2,5 +2,6 @@
 #define SENSORS_H
 class accelerometer
 {
+public:
 };
 #endif
