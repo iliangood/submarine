@@ -12,7 +12,7 @@
 
 byte mac[] = {10, 10, 10, 10, 10, 10};
 
-IPAddress ip(192,168,1,75);
+IPAddress ip(10, 0, 0, 1);
 
 void setup() {
   Serial.begin(115200);
@@ -53,7 +53,7 @@ void setup() {
       Serial.print('.');
       Serial.print(rci.remoteIP[1]);
       Serial.print('.');
-      Serial.print(rci.remoteIP[2]);
+      Serial.print(rci.remoteIP[2]); 
       Serial.print('.');
       Serial.println(rci.remoteIP[3]);
       Serial.print("size:");
@@ -62,7 +62,7 @@ void setup() {
       Serial.println(ControllerPacket::serializedSize());
     }*/
     
-    if(msg.getSize() > ControllerPacket::serializedSize())
+    if(msg.getSize() >= ControllerPacket::serializedSize())
     {
       ControllerPacketBuffer packetBuf = msg.read<ControllerPacketBuffer>();
       ControllerPacket packet = ControllerPacket::deserialize(packetBuf.get());

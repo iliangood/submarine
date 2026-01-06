@@ -1,4 +1,5 @@
-#include <cstdint>
+#include "HardwareSerial.h"
+#include "Arduino.h"
 #if !defined MOTOR_H
 #define MOTOR_H
 
@@ -69,16 +70,13 @@ public:
     uint32_t now = millis();
     uint32_t deltaTime = now - lastUpdate_;
     lastUpdate_ = now;
-
     int32_t maxDelta = (static_cast<int32_t>(deltaTime) * stepPower_) / stepMS_;
-
     maxDelta = clamp(maxDelta, 0, INT16_MAX);
 
-    int32_t desiredChange = targetPower_ - currentPower_;
+    int32_t desiredChange = static_cast<int32_t>(targetPower_) - currentPower_;
     int16_t actualChange = clamp(desiredChange, -maxDelta, maxDelta);
 
     currentPower_ += actualChange;
-
 
 
     writePower(currentPower_);
