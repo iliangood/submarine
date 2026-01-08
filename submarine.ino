@@ -8,6 +8,7 @@
 #include "motor.h"
 #include "motorController.h"
 #include "packets.h"
+#include "sensors.h"
 
 
 byte mac[] = {10, 10, 10, 10, 10, 10};
@@ -22,6 +23,18 @@ void setup() {
   uint64_t lastPacketCount = 0;
   uint64_t sendCounter = 0;
   uint32_t lastSendTime = 0;
+  Wire.begin();
+
+  
+
+  Accelerometer acc(Wire);
+  if (acc.init()) {
+    Serial.println("Failed Accelerometer init");
+    while (1) {
+      delay(10);
+    }
+  }
+  Serial.println("Calibrated");
 
   DataTransmitter transmitter(mac, 56728, "submarine");
   message<64> msg;
@@ -30,6 +43,7 @@ void setup() {
     Serial.println("transmitter init: FAIL");
     while(1);
   }
+
   //Serial.println("transmitter init: OK");
   MotorController<6> controller;
   controller[0].axises() = Axises(30000, 30000, 30000, 30000, 30000, 30000);
@@ -96,8 +110,10 @@ void setup() {
     msg.push(SubmarinePacket{
       static_cast<uint64_t>(millis()),
       static_cast<uint64_t>(last_packet_rx_time_message),
-      Axises(),
-      Axises()
+      /*Axises(),
+      Axises()*/
+      acc.getAcceleration(),
+      acc.getPos()
     });
     msg.push(sendCounter++);
 

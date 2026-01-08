@@ -1,5 +1,5 @@
 #include "axis.h"
-
+#include <utils.h>
 
 
 Axises::Axises() : axises_{0, 0, 0, 0, 0, 0} {}
@@ -60,4 +60,25 @@ int16_t Axises::getAxis(size_t axis) const
 int16_t Axises::axis(size_t axis) const
 {
     return axises_[axis];
+}
+
+
+int16_t float_range_to_int16(float value, float in_min, float in_max)
+{
+    value = clamp(value, in_min, in_max);
+
+    float normalized = (value - in_min) / (in_max - in_min) * 2.0f - 1.0f;
+
+    float scaled = normalized * 32767.0f;
+
+    int32_t rounded;
+    if (scaled >= 0.0f)
+        rounded = static_cast<int32_t>(scaled + 0.5f);
+    else
+        rounded = static_cast<int32_t>(scaled - 0.5f);
+
+    if (rounded > 32767) rounded = 32767;
+    if (rounded < -32768) rounded = -32768;
+
+    return static_cast<int16_t>(rounded);
 }

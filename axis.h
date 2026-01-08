@@ -39,4 +39,7 @@ public:
 	int16_t axis(size_t axis) const;
 };
 
+// Преобразует float из диапазона [in_min, in_max] в int16_t [-32768, 32767]
+int16_t float_range_to_int16(float value, float in_min, float in_max);
+
 #endif
