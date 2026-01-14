@@ -16,12 +16,9 @@ byte mac[] = {10, 10, 10, 10, 10, 10};
 IPAddress ip(10, 0, 0, 1);
 
 void setup() {
-  Serial.begin(115200);
+  Serial.begin(460800);
   
   uint64_t last_packet_rx_time_message = 0;
-  uint64_t lostPackets = 0;
-  uint64_t lastPacketCount = 0;
-  uint64_t sendCounter = 0;
   uint32_t lastSendTime = 0;
   Wire.begin();
 
@@ -59,6 +56,7 @@ void setup() {
   {
     //if()
     //Serial.println("cyclyng0");
+    acc.update();
     receiveInfo rci = transmitter.receiveData(&msg);
     /*if(msg.getSize() > 0)
     {
@@ -95,27 +93,20 @@ void setup() {
       Serial.print(packet.speedTarget[5]);
       Serial.print('\n');*/
       last_packet_rx_time_message = packet.sendTime_ms;
-      //Serial.print("packet.sendTime_ms:");
-      //Serial.println((uint32_t)packet.sendTime_ms);
-      //Serial.print("lost packets:");
-      uint64_t packetCount = msg.read<uint64_t>();
-      //Serial.println((uint32_t)
-      //(lostPackets += packetCount - lastPacketCount - 1)//);
-      lastPacketCount = packetCount;
     }
     //Serial.println("cyclyng2");
     msg.clear();
     if(lastSendTime + 10 < millis())
     {
-    msg.push(SubmarinePacket{
+      uint8_t pack[40];
+      SubmarinePacket{
       static_cast<uint64_t>(millis()),
       static_cast<uint64_t>(last_packet_rx_time_message),
-      /*Axises(),
-      Axises()*/
       acc.getAcceleration(),
       acc.getPos()
-    });
-    msg.push(sendCounter++);
+      //Axises(1,2,3,4,5,6)
+    }.serialize(pack);
+    msg.push(pack, SubmarinePacket::serializedSize());
 
     transmitter.sendData(msg);
     msg.clear();
