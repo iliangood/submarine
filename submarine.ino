@@ -13,7 +13,7 @@
 
 byte mac[] = {10, 10, 10, 10, 10, 10};
 
-IPAddress ip(10, 0, 0, 1);
+IPAddress ip(192, 168, 1, 75);
 
 void setup() {
   Serial.begin(460800);
