@@ -11,7 +11,8 @@ class Accelerometer
 public:
   Accelerometer(TwoWire& wire) : mpu(wire) {}
 
-  uint8_t init() {
+  uint8_t init() 
+  {
     Serial.println("Accelerometer calibration");
     delay(35);
     volatile uint8_t rc = mpu.begin();
@@ -25,11 +26,13 @@ public:
   }
 
 
-  bool& upsideDownMounting() {
+  bool& upsideDownMounting() 
+  {
     return mpu.upsideDownMounting;
   }
 
-  Axises getAcceleration() {
+  Axises getAcceleration() 
+  {
     return Axises{
       float_range_to_int16(mpu.getAccX(), -180.0, 180.0),
       float_range_to_int16(mpu.getAccY(), -180.0, 180.0),
@@ -39,7 +42,8 @@ public:
       float_range_to_int16(mpu.getGyroZ(), -180.0, 180.0)
     };
   }
-  Axises getPos() {
+  Axises getPos() 
+  {
     return Axises{
       0,
       0,
@@ -49,8 +53,26 @@ public:
       float_range_to_int16(mpu.getAngleZ(), -180.0, 180.0)
     };
   }
-  void update() {
+  void update()
+  {
     mpu.update();
   }
 };
+
+class depthGauge
+{
+  MS5837 sensor;
+public:
+  depthGauge(TwoWire wire) : sensor(wire) {}
+  bool init()
+  {
+    return sensor.init();
+  }
+  float depth()
+  {
+    sensor.read();
+    return sensor.depth();
+  }
+}
+
 #endif
