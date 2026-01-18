@@ -59,11 +59,11 @@ public:
   }
 };
 
-class depthGauge
+class DepthGauge
 {
   MS5837 sensor;
 public:
-  depthGauge(TwoWire wire) : sensor(wire) {}
+  DepthGauge(TwoWire wire) : sensor(wire) {}
   bool init()
   {
     return sensor.init();
