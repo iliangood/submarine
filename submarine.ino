@@ -33,6 +33,15 @@ void setup() {
   }
   Serial.println("Calibrated");
 
+  DepthGauge depthGauge(Wire);
+  if( !depthGauge.init()) 
+  {
+    Serial.println("Failed depthGauge init");
+    while (1) {
+      delay(10);
+    }
+  }
+
   DataTransmitter transmitter(mac, 56728, "submarine");
   message<64> msg;
   if (transmitter.init(ip) != 0)
