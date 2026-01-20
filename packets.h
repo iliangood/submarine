@@ -55,6 +55,7 @@ struct SubmarinePacket
 	uint64_t last_packet_rx_time_message;
 	Axises currentSpeed;
 	Axises currentPos;
+	float depth;
 
 	void serialize(uint8_t* data) // size of data should be least 40
 	{
