@@ -57,7 +57,7 @@ struct SubmarinePacket
 	Axises currentPos;
 	float depth;
 
-	void serialize(uint8_t* data) // size of data should be least 40
+	void serialize(uint8_t* data) // size of data should be least 44
 	{
 		*reinterpret_cast<uint64_t*>(&data[0]) = sendTime_ms;
 		*reinterpret_cast<uint64_t*>(&data[8]) = last_packet_rx_time_message;
@@ -66,8 +66,9 @@ struct SubmarinePacket
 			*reinterpret_cast<int16_t*>(&data[16 + i * 2]) = currentSpeed[i];
 			*reinterpret_cast<int16_t*>(&data[28 + i * 2]) = currentPos[i];
 		}
+		*reinterpret_cast<const float*>(&data[40]) = packet.depth;
 	}
-	static SubmarinePacket deserialize(const uint8_t* data) // size of data should be least 40
+	static SubmarinePacket deserialize(const uint8_t* data) // size of data should be least 44
 	{
 		SubmarinePacket packet;
 		packet.sendTime_ms = *reinterpret_cast<const uint64_t*>(&data[0]);
@@ -77,12 +78,13 @@ struct SubmarinePacket
 			packet.currentSpeed[i] = *reinterpret_cast<const int16_t*>(&data[16 + i * 2]);
 			packet.currentPos[i] = *reinterpret_cast<const int16_t*>(&data[28 + i * 2]);
 		}
+		packet.depth = *reinterpret_cast<const float*>(&data[40]);
 		return packet;
 	}
 
 	static constexpr size_t serializedSize()
 	{
-		return 40;
+		return 44;
 	}
 };
 
