@@ -66,7 +66,7 @@ struct SubmarinePacket
 			*reinterpret_cast<int16_t*>(&data[16 + i * 2]) = currentSpeed[i];
 			*reinterpret_cast<int16_t*>(&data[28 + i * 2]) = currentPos[i];
 		}
-		*reinterpret_cast<const float*>(&data[40]) = packet.depth;
+		*reinterpret_cast<float*>(&data[40]) = depth;
 	}
 	static SubmarinePacket deserialize(const uint8_t* data) // size of data should be least 44
 	{
