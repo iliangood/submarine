@@ -65,7 +65,6 @@ void setup() {
   {
     depthGauge.update();
 
-    //if()
     //Serial.println("cyclyng0");
     acc.update();
     receiveInfo rci = transmitter.receiveData(&msg);
