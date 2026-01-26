@@ -2,6 +2,7 @@
 #if !defined (SENSORS_H)
 #define SENSORS_H
 #include <MPU6050_light.h>
+#include <MS5837.h>
 #include <Wire.h>
 #include "axis.h"
 
@@ -63,16 +64,23 @@ class DepthGauge
 {
   MS5837 sensor;
 public:
-  DepthGauge(TwoWire wire) : sensor(wire) {}
-  bool init()
+  bool init(uint8_t mode = 0)
   {
-    return sensor.init();
+    return sensor.begin(mode);
+  }
+  void update()
+  {
+    Serial.println("read");
+    sensor.read();
+    Serial.println("readed");
   }
   float depth()
   {
-    sensor.read();
-    return sensor.depth();
+    Serial.println("deapth");
+    float res = sensor.getDepth();
+    Serial.println("deapthed");
+    return res;
   }
-}
+};
 
 #endif

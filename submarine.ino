@@ -11,7 +11,7 @@
 #include "sensors.h"
 
 
-byte mac[] = {10, 10, 10, 10, 10, 10};
+unsigned char mac[6] = {10, 10, 10, 10, 10, 10};
 
 IPAddress ip(192, 168, 1, 75);
 
@@ -33,8 +33,8 @@ void setup() {
   }
   Serial.println("Calibrated");
 
-  DepthGauge depthGauge(Wire);
-  if( !depthGauge.init()) 
+  DepthGauge depthGauge;
+  if(!depthGauge.init()) 
   {
     Serial.println("Failed depthGauge init");
     while (1) {
@@ -63,7 +63,8 @@ void setup() {
   //uint32_t lastNet = millis();
   while(1)
   {
-    //if()
+    depthGauge.update();
+
     //Serial.println("cyclyng0");
     acc.update();
     receiveInfo rci = transmitter.receiveData(&msg);
@@ -108,21 +109,24 @@ void setup() {
     if(lastSendTime + 10 < millis())
     {
       uint8_t pack[40];
-      SubmarinePacket{
-      static_cast<uint64_t>(millis()),
-      static_cast<uint64_t>(last_packet_rx_time_message),
-      acc.getAcceleration(),
-      acc.getPos()
-      //Axises(1,2,3,4,5,6)
-    }.serialize(pack);
-    msg.push(pack, SubmarinePacket::serializedSize());
-
-    transmitter.sendData(msg);
-    msg.clear();
+      SubmarinePacket {
+        static_cast<uint64_t>(millis()),
+        static_cast<uint64_t>(last_packet_rx_time_message),
+        acc.getAcceleration(),
+        acc.getPos(),
+        depthGauge.depth()
+        //Axises(1,2,3,4,5,6)
+      }.serialize(pack);
+      msg.push(pack, SubmarinePacket::serializedSize());
+      //Serial.println("s1");
+      transmitter.sendData(msg);
+      //Serial.println("s2");
+      msg.clear();
 
     }
     //Serial.println("cyclyng");
     controller.update();
+
     delay(max(20 - static_cast<int32_t>(millis() - lastCycle), 0));
     lastCycle = millis();
     //Serial.println("cyclyng4");
