@@ -34,12 +34,12 @@ public:
   Axises getAcceleration() 
   {
     return Axises{
-      float_range_to_int16(mpu.getAccX(), -180.0, 180.0),
-      float_range_to_int16(mpu.getAccY(), -180.0, 180.0),
-      float_range_to_int16(mpu.getAccZ(), -180.0, 180.0),
-      float_range_to_int16(mpu.getGyroX(), -180.0, 180.0),
-      float_range_to_int16(mpu.getGyroY(), -180.0, 180.0),
-      float_range_to_int16(mpu.getGyroZ(), -180.0, 180.0)
+      float_range_to_int16(mpu.getAccX(), -360.0, 360.0),
+      float_range_to_int16(mpu.getAccY(), -360.0, 360.0),
+      float_range_to_int16(mpu.getAccZ(), -360.0, 360.0),
+      float_range_to_int16(mpu.getGyroX(), -360.0, 360.0),
+      float_range_to_int16(mpu.getGyroY(), -360.0, 360.0),
+      float_range_to_int16(mpu.getGyroZ(), -360.0, 360.0)
     };
   }
   Axises getPos() 
@@ -48,9 +48,9 @@ public:
       0,
       0,
       0,
-      float_range_to_int16(mpu.getAngleX(), -180.0, 180.0),
-      float_range_to_int16(mpu.getAngleY(), -180.0, 180.0),
-      float_range_to_int16(mpu.getAngleZ(), -180.0, 180.0)
+      float_range_to_int16(mpu.getAngleX(), -360.0, 360.0),
+      float_range_to_int16(mpu.getAngleY(), -360.0, 360.0),
+      float_range_to_int16(mpu.getAngleZ(), -360.0, 360.0)
     };
   }
   void update()
