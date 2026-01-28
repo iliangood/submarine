@@ -16,7 +16,8 @@ unsigned char mac[6] = {10, 10, 10, 10, 10, 10};
 IPAddress ip(192, 168, 1, 75);
 
 void setup() {
-  Serial.begin(460800);
+  Serial.begin(115200);
+  //Wire.setClock(400000L);
   
   uint64_t last_packet_rx_time_message = 0;
   uint32_t lastSendTime = 0;
@@ -50,7 +51,7 @@ void setup() {
     while(1);
   }
 
-  //Serial.println("transmitter init: OK");
+  Serial.println("transmitter init: OK");
   MotorController<6> controller;
   controller[0].axises() = Axises(30000, 30000, 30000, 30000, 30000, 30000);
   controller[1].axises() = Axises(30000, 30000, 30000, 30000, 30000, 30000);
@@ -108,7 +109,7 @@ void setup() {
     msg.clear();
     if(lastSendTime + 10 < millis())
     {
-      uint8_t pack[40];
+      uint8_t pack[44];
       SubmarinePacket {
         static_cast<uint64_t>(millis()),
         static_cast<uint64_t>(last_packet_rx_time_message),
@@ -118,7 +119,7 @@ void setup() {
         //Axises(1,2,3,4,5,6)
       }.serialize(pack);
       msg.push(pack, SubmarinePacket::serializedSize());
-      //Serial.println("s1");
+      Serial.println("s1");
       transmitter.sendData(msg);
       //Serial.println("s2");
       msg.clear();
