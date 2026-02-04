@@ -15,7 +15,12 @@ unsigned char mac[6] = {10, 10, 10, 10, 10, 10};
 
 IPAddress ip(192, 168, 1, 75);
 
+
+Accelerometer acc(Wire);
+
 void setup() {
+  //static Accelerometer acc(Wire);
+
   Serial.begin(115200);
   //Wire.setClock(400000L);
   
@@ -25,7 +30,6 @@ void setup() {
 
   
 
-  Accelerometer acc(Wire);
   if (acc.init()) {
     Serial.println("Failed Accelerometer init");
     while (1) {
@@ -84,7 +88,6 @@ void setup() {
       Serial.print("size should be:");
       Serial.println(ControllerPacket::serializedSize());
     }*/
-    
     if(msg.getSize() >= ControllerPacket::serializedSize())
     {
       ControllerPacketBuffer packetBuf = msg.read<ControllerPacketBuffer>();
