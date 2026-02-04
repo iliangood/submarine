@@ -119,7 +119,6 @@ void setup() {
         acc.getAcceleration(),
         acc.getPos(),
         depthGauge.depth()
-        //Axises(1,2,3,4,5,6)
       }.serialize(pack);
       msg.push(pack, SubmarinePacket::serializedSize());
       Serial.println("s1");
@@ -128,12 +127,10 @@ void setup() {
       msg.clear();
 
     }
-    //Serial.println("cyclyng");
     controller.update();
 
     delay(max(20 - static_cast<int32_t>(millis() - lastCycle), 0));
     lastCycle = millis();
-    //Serial.println("cyclyng4");
   }
 }
 
