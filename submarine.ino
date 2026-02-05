@@ -16,10 +16,10 @@ unsigned char mac[6] = {10, 10, 10, 10, 10, 10};
 IPAddress ip(192, 168, 1, 75);
 
 
-Accelerometer acc(Wire);
+//Accelerometer acc(Wire);
 
 void setup() {
-  //static Accelerometer acc(Wire);
+  static Accelerometer acc(Wire);
 
   Serial.begin(115200);
   //Wire.setClock(400000L);
