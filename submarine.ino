@@ -11,7 +11,7 @@
 #include "sensors.h"
 
 
-unsigned char mac[6] = {10, 10, 10, 10, 10, 10};
+unsigned char mac[6] = { 10, 10, 10, 10, 10, 10 };
 
 IPAddress ip(192, 168, 1, 75);
 
@@ -23,12 +23,12 @@ void setup() {
 
   Serial.begin(115200);
   //Wire.setClock(400000L);
-  
+
   uint64_t last_packet_rx_time_message = 0;
   uint32_t lastSendTime = 0;
   Wire.begin();
 
-  
+
 
   if (acc.init()) {
     Serial.println("Failed Accelerometer init");
@@ -38,21 +38,21 @@ void setup() {
   }
   Serial.println("Calibrated");
 
-  DepthGauge depthGauge;
+  /*DepthGauge depthGauge;
   if(!depthGauge.init()) 
   {
     Serial.println("Failed depthGauge init");
     while (1) {
       delay(10);
     }
-  }
+  }*/
 
   DataTransmitter transmitter(mac, 56728, "submarine");
   message<64> msg;
-  if (transmitter.init(ip) != 0)
-  {
+  if (transmitter.init(ip) != 0) {
     Serial.println("transmitter init: FAIL");
-    while(1);
+    while (1)
+      ;
   }
 
   Serial.println("transmitter init: OK");
@@ -66,9 +66,8 @@ void setup() {
 
   uint32_t lastCycle = millis();
   //uint32_t lastNet = millis();
-  while(1)
-  {
-    depthGauge.update();
+  while (1) {
+    //depthGauge.update();
 
     //Serial.println("cyclyng0");
     acc.update();
@@ -88,8 +87,7 @@ void setup() {
       Serial.print("size should be:");
       Serial.println(ControllerPacket::serializedSize());
     }*/
-    if(msg.getSize() >= ControllerPacket::serializedSize())
-    {
+    if (msg.getSize() >= ControllerPacket::serializedSize()) {
       ControllerPacketBuffer packetBuf = msg.read<ControllerPacketBuffer>();
       ControllerPacket packet = ControllerPacket::deserialize(packetBuf.get());
       controller.setAcceleration(packet.speedTarget);
@@ -110,22 +108,22 @@ void setup() {
     }
     //Serial.println("cyclyng2");
     msg.clear();
-    if(lastSendTime + 10 < millis())
-    {
+    if (lastSendTime + 10 < millis()) {
       uint8_t pack[44];
-      SubmarinePacket {
+      SubmarinePacket{
         static_cast<uint64_t>(millis()),
         static_cast<uint64_t>(last_packet_rx_time_message),
         acc.getAcceleration(),
         acc.getPos(),
-        depthGauge.depth()
-      }.serialize(pack);
+        0.0
+        //depthGauge.depth()
+      }
+        .serialize(pack);
       msg.push(pack, SubmarinePacket::serializedSize());
-      Serial.println("s1");
+      //Serial.println("s1");
       transmitter.sendData(msg);
       //Serial.println("s2");
       msg.clear();
-
     }
     controller.update();
 
@@ -135,5 +133,4 @@ void setup() {
 }
 
 void loop() {
-
 }

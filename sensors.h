@@ -32,7 +32,7 @@ public:
     return mpu.upsideDownMounting;
   }
 
-  Axises getAcceleration() 
+  Axises getAcceleration() const
   {
     return Axises{
       float_range_to_int16(mpu.getAccX(), -360.0, 360.0),
@@ -43,7 +43,7 @@ public:
       float_range_to_int16(mpu.getGyroZ(), -360.0, 360.0)
     };
   }
-  Axises getPos() 
+  Axises getPos() const
   {
     return Axises{
       0,
