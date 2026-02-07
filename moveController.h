@@ -1,5 +1,7 @@
 #if !defined(MOVE_CONTROLLER_H)
 #define MOVE_CONTROLLER_H
+#include "sensors.h"
+#include "motorController.h"
 
 template<size_t N>
 class MoveController
