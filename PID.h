@@ -13,7 +13,7 @@ class PID
   int16_t i_component = 0;
   //uint32_t prev_update_;
 public:
-  PID( int16_t p, int16_t i, int16_t d) : p_(p), i_(i), d_(d), prev_(0), target_(0), /*prev_update_(millis()),*/ last_update_(millis()) {}
+  PID( int16_t p, int16_t i, int16_t d) : p_(p), i_(i), d_(d), prev_(0), target_(0), last_update_(millis()) {}
   void setTarget(int16_t target);
   void update(int16_t current);
 };
