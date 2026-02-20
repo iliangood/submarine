@@ -69,7 +69,6 @@ void setup() {
   while (1) {
     //depthGauge.update();
 
-    //Serial.println("cyclyng0");
     acc.update();
     receiveInfo rci = transmitter.receiveData(&msg);
     /*if(msg.getSize() > 0)
@@ -120,9 +119,7 @@ void setup() {
       }
         .serialize(pack);
       msg.push(pack, SubmarinePacket::serializedSize());
-      //Serial.println("s1");
       transmitter.sendData(msg);
-      //Serial.println("s2");
       msg.clear();
     }
     controller.update();
