@@ -1,6 +1,7 @@
 #if !defined PID_H
 #define PID_H
 #include <Arduino.h>
+#include "fixedPoint.h"
 
 // Всего есть 16 бит, P означа.т сколько бит будет после запятой для итогового числа, T - тип числа
 template<typename T, size_t P>
