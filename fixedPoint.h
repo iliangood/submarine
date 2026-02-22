@@ -1,6 +1,14 @@
 #if !defined FIXED_POINT_H
 #define FIXED_POINT_H
 #include <limits.h>
+
+// Всего есть 16 бит, P означа.т сколько бит будет после запятой для итогового числа, T - тип числа
+template<typename T, size_t P>
+constexpr T toFixedPoint(double num)
+{
+  return static_cast<T>(round(num * (1LL << P)));
+}
+
 template<typename BT, typename ST, ssize_t P>
 class fixedPoint
 {
@@ -12,7 +20,7 @@ public:
   constexpr fixedPoint(const BT& num) : num_(num) {}
 
   template<typename BTo, typename STo, ssize_t Po>
-  constexpr static fixedPoint<BT, ST, P> fromOtherFixedPoint(const fixedPoint<BTo, STo, Po>& other)
+  static fixedPoint<BT, ST, P> fixedPoint(const fixedPoint<BTo, STo, Po>& other)
   {
     if(sizeof(BT) > sizeof(BTo))
     {
