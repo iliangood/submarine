@@ -10,6 +10,7 @@ class MoveController
   const Accelerometer& acc_;
   Axises target_;
   Axises currentPower_;
+  PID pids_[6];
 public:
   MoveController(const Accelerometer& acc);
 
