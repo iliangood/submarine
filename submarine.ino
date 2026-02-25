@@ -70,7 +70,8 @@ void setup() {
     //depthGauge.update();
 
     acc.update();
-    receiveInfo rci = transmitter.receiveData(&msg);
+    //receiveInfo rci = 
+    transmitter.receiveData(&msg);
     /*if(msg.getSize() > 0)
     {
       Serial.print("get from:");

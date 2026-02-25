@@ -34,7 +34,7 @@ class Motor
 public:
   Motor(){}
 
-  Motor(char pin, MotorController<N>* controller, unsigned int stepMs = 1, unsigned int stepPower = 128) : pin_(pin), motorController_(controller), stepMS_(stepMs), stepPower_(stepPower), targetPower_(0), currentPower_(0), lastUpdate_(millis()) {}
+  Motor(char pin, MotorController<N>* controller, unsigned int stepMs = 1, unsigned int stepPower = 128) : pin_(pin), targetPower_(0), currentPower_(0), lastUpdate_(millis()), stepMS_(stepMs), stepPower_(stepPower),  motorController_(controller) {}
 
   int16_t getTargetPower() const
   {
@@ -66,7 +66,7 @@ public:
   const Axises& axises() const { return axises_; }
 
   bool update()
-{
+  {
     uint32_t now = millis();
     uint32_t deltaTime = now - lastUpdate_;
     lastUpdate_ = now;
@@ -82,7 +82,7 @@ public:
     writePower(currentPower_);
 
     return currentPower_ == targetPower_;
-}
+  }
 
 };
 

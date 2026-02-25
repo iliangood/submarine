@@ -2,6 +2,9 @@
 #define MOVE_CONTROLLER_H
 #include "sensors.h"
 #include "motorController.h"
+#include "PID.h"
+
+// (-, -, глубина, крен, тангаж, курс)
 
 template<size_t N>
 class MoveController
@@ -14,7 +17,11 @@ class MoveController
 public:
   MoveController(const Accelerometer& acc);
 
-  void setTarget(const Axises& target);
+  void setTarget(const Axises& target)
+  {
+    target_ = target;
+    
+  }
   void update();
 };
 
