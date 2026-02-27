@@ -17,12 +17,12 @@ int16_t& Axises::operator[](size_t index)
     return axises_[index];
 }
 
-int16_t& Axises::operator[](AxisesNames index)
+int16_t& Axises::operator[](Names index)
 {
     return axises_[static_cast<int>(index)];
 }
 
-int16_t Axises::operator[](AxisesNames index) const
+int16_t Axises::operator[](Names index) const
 {
     return axises_[static_cast<int>(index)];
 }
@@ -34,20 +34,20 @@ int16_t Axises::operator[](size_t index) const
 
 Axises::Axises(int16_t Vx, int16_t Vy, int16_t Vz, int16_t Wx, int16_t Wy, int16_t Wz)
 {
-    (*this)[AxisesNames::Vx] = Vx;
-    (*this)[AxisesNames::Vy] = Vy;
-    (*this)[AxisesNames::Vz] = Vz;
-    (*this)[AxisesNames::Wx] = Wx;
-    (*this)[AxisesNames::Wy] = Wy;
-    (*this)[AxisesNames::Wz] = Wz;
+    (*this)[Names::x] = Vx;
+    (*this)[Names::y] = Vy;
+    (*this)[Names::z] = Vz;
+    (*this)[Names::Wx] = Wx;
+    (*this)[Names::Wy] = Wy;
+    (*this)[Names::Wz] = Wz;
 }
 
-int16_t Axises::getAxis(AxisesNames axis) const
+int16_t Axises::getAxis(Names axis) const
 {
     return axises_[static_cast<int>(axis)];
 }
 
-int16_t Axises::axis(AxisesNames axis) const
+int16_t Axises::axis(Names axis) const
 {
     return axises_[static_cast<int>(axis)];
 }

@@ -35,6 +35,21 @@ public:
     i_ = i;
     d_ = d;
   }
+
+  float getP()
+  {
+    return p_;
+  }
+
+  float getI()
+  {
+    return i_;
+  }
+
+  float getD()
+  {
+    return d_;
+  }
   
   static int32_t defaultDifference(int16_t a, int16_t b)
   {
