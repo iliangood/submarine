@@ -12,11 +12,12 @@ class MoveController
   MotorController<N> motorController_;
   Accelerometer& accelerometer_;
   DepthGauge& depthGauge_;
+  int16_t target_depth;
   Axises target_;
   Axises currentPower_;
-  int16_t xDepth;
-  int16_t yDepth;
-  int16_t zDepth;
+  int16_t xDepthC_;
+  int16_t yDepthC_;
+  int16_t zDepthC_;
   PID pids_[4];
 public:
 
@@ -28,7 +29,12 @@ public:
     yaw
   };
 
-  MoveController(Accelerometer& acc, DepthGauge& depthGauge) : accelerometer_(acc), depthGauge_(depthGauge) {}
+  MoveController(Accelerometer& acc, DepthGauge& depthGauge) : accelerometer_(acc), depthGauge_(depthGauge)
+  {
+    pids_[PIDs::roll].setDifferenceFunc(PIDs::cycledtDifference);
+    pids_[PIDs::pitch].setDifferenceFunc(PIDs::cycledtDifference);
+    pids_[PIDs::yaw].setDifferenceFunc(PIDs::cycledtDifference);
+  }
 
   PID& pid(size_t index)
   {
@@ -48,13 +54,15 @@ public:
   void update()
   {
     Axises pos = accelerometer_.getPos();
+    int16_t deapth = float_range_to_int16(depthGauge_.depth(), 0, 128);
     Axises res;
     res[Axises::Names::Wx] = pids_[PIDs::roll].update(pos[Axises::Names::Wx]);
     res[Axises::Names::Wy] = pids_[PIDs::pitch].update(pos[Axises::Names::Wy]);
     res[Axises::Names::Wz] = pids_[PIDs::yaw].update(pos[Axises::Names::Wz]);
-    res[0] = target[0];
-    res[1] = target[1];
-    res[2] = target[2];
+    res[Axises::Names::x] = target_[Axises::Names::x];
+    res[Axises::Names::y] = target_[Axises::Names::y];
+    res[Axises::Names::z] = target_[Axises::Names::z];
+
   }
 
   

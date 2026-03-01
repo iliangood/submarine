@@ -82,3 +82,9 @@ int16_t float_range_to_int16(float value, float in_min, float in_max)
 
     return static_cast<int16_t>(rounded);
 }
+
+float int16_to_float_range(int16_t value, float in_min, float in_max)
+{
+    constexpr float scale = 1.0 / 32768.0;
+    return static_cast<float>(value) * scale * (in_max - in_min) + in_min;
+}

@@ -10,7 +10,7 @@ int16_t PID::update(int16_t current)
 
     i_component = constrain(i_component + (diff * i_ * time_elapsed), -i_max_, i_max_);
     
-    int16_t d_component = constrain(-(static_cast<int32_t>(current) - prev_) * d_ / time_elapsed, INT16_MIN, INT16_MAX);
+    int16_t d_component = constrain(-(differenceFunc_(current, prev_)) * d_ / time_elapsed, INT16_MIN, INT16_MAX);
     
     prev_ = current;
     last_update_ = millis();
