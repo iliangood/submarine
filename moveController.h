@@ -1,3 +1,4 @@
+#include <cmath>
 #if !defined(MOVE_CONTROLLER_H)
 #define MOVE_CONTROLLER_H
 #include "sensors.h"
@@ -62,7 +63,7 @@ public:
     res[Axises::Names::x] = target_[Axises::Names::x];
     res[Axises::Names::y] = target_[Axises::Names::y];
     res[Axises::Names::z] = target_[Axises::Names::z];
-
+    float xDepthSpeed = -(res[Axises::Names::x] * sinf(int16_to_float_range(pos[Axises::Names::Wy],  -360, 360))) * xDepthC_;
   }
 
   
