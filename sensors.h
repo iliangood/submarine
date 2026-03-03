@@ -49,9 +49,9 @@ public:
       0,
       0,
       0,
-      float_range_to_int16(mpu.getAngleX(), -360.0, 360.0),
-      float_range_to_int16(mpu.getAngleY(), -360.0, 360.0),
-      float_range_to_int16(mpu.getAngleZ(), -360.0, 360.0)
+      float_range_to_int16(mpu.getAngleX(), -180.0, 180.0),
+      float_range_to_int16(mpu.getAngleY(), -90.0, 90.0),
+      float_range_to_int16(math_mod(mpu.getAngleZ(), 360.0f) , 0, 360.0)
     };
   }
   void update()

@@ -48,4 +48,24 @@ public:
 int16_t float_range_to_int16(float value, float in_min, float in_max);
 float int16_to_float_range(int16_t value, float in_min, float in_max);
 
+template<typename T>
+inline
+T mod(T num, T module)
+{
+    return num - (num/module)*module;
+}
+template<typename T>
+inline
+T math_mod(T num, T module)
+{
+    if (module == 0) {
+        return T{0};
+    }
+    T res = mod(num, module);
+    if (res < 0) {
+        res += module;
+    }
+    return res;
+}
+
 #endif
