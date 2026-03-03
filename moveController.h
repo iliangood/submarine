@@ -60,7 +60,7 @@ public:
     int16_t Wy_acc  = pids_[PIDs::pitch].update(pos[Axises::Names::Wy]);
     int16_t Wz_acc = pids_[PIDs::yaw].update(pos[Axises::Names::Wz]);
     res[Axises::Names::Wy] = Wy_acc * cosf(int16_to_float_range(pos[Axises::Names::Wx], -90, 90)) + Wz_acc * sinf(int16_to_float_range(pos[Axises::Names::Wx], -90, 90));
-    res[Axises::Names::Wz];
+    res[Axises::Names::Wz] = Wz_acc * sinf(int16_to_float_range(pos[Axises::Names::Wx], -90, 90)) + Wz_acc * cosf(int16_to_float_range(pos[Axises::Names::Wx], -90, 90));
     res[Axises::Names::x] = target_[Axises::Names::x];
     res[Axises::Names::y] = target_[Axises::Names::y];
     res[Axises::Names::z] = target_[Axises::Names::z];
