@@ -12,16 +12,16 @@ class Accelerometer
 public:
   Accelerometer(TwoWire& wire) : mpu(wire) {}
 
-  uint8_t init() 
+  uint8_t init() // Вроде не должно влиять, но что-то не работало и это помогало
   {
-    Serial.println("Accelerometer calibration");
+    //Serial.println("Accelerometer calibration");
     delay(35);
     volatile uint8_t rc = mpu.begin();
-    Serial.println(rc);
+    //Serial.println(rc);
     if(rc != 0)
       return rc;
     delay(15);
-    Serial.println('a');
+    //Serial.println('a');
     mpu.calcOffsets();
     return 0;
   }

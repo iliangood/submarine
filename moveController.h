@@ -76,11 +76,11 @@ public:
     pids_[PIDs::depth].setTarget(target_depth_);
     int16_t depth_speed = pids_[PIDs::deapth].update(deapth);
 
-    res[Axises::Names::x] = constrain(static_cast<int32_t>(target_[Axises::Names::x]) + xDepthCoof * depth_speed, INT16_MIN, INT16_MAX);
+    res[Axises::Names::x] = constrain(static_cast<int32_t>(target_[Axises::Names::x]) + xDepthCoof * depth_speed, INT16_MIN, INT16_MAX); // TODO: Переделать
     res[Axises::Names::y] = constrain(static_cast<int32_t>(target_[Axises::Names::y]) + yDepthCoof * depth_speed, INT16_MIN, INT16_MAX);
     res[Axises::Names::z] = constrain(static_cast<int32_t>(target_[Axises::Names::z]) + zDepthCoof * depth_speed, INT16_MIN, INT16_MAX);
 
-    res[Axises::Names::Wx] = pids_[PIDs::roll].update(pos[Axises::Names::Wx]); // TODO: Переделать
+    res[Axises::Names::Wx] = pids_[PIDs::roll].update(pos[Axises::Names::Wx]);
     res[Axises::Names::Wy] = Wy_speed * cosWx + Wz_speed * sinWx;
     res[Axises::Names::Wz] = Wz_speed * sinWx + Wz_speed * cosWx;
   }
