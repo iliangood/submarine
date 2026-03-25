@@ -10,6 +10,7 @@
 #include "packets.h"
 #include "sensors.h"
 #include "moveController.h"
+#include "config.h"
 
 
 unsigned char mac[6] = { 10, 10, 10, 10, 10, 10 };
