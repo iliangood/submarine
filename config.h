@@ -4,7 +4,7 @@
 #include <assert.h>
 
 template<size_t N>
-class config {
+class Config {
   size_t configs_[N];
   size_t currentAddr_ = 0;
   size_t currentIndex_ = 0;
