@@ -32,6 +32,9 @@ public:
   }
 
   friend class ConfigRef;
+  friend class ConstConfigRef;
+  friend class SingleConfigRef;
+
 };
 
 class ConfigRef {
@@ -41,7 +44,7 @@ class ConfigRef {
   size_t* currentIndex_;
 public:
   template<size_t N>
-  ConfigRef(Config<N>* config) : configs_(config.configs_), size_(N), currentAddr_(&config.currentAddr_), currentIndex_(&config.currentIndex_){}
+  ConfigRef(Config<N>* config) : configs_(config.configs_), size_(N), currentAddr_(&config.currentAddr_), currentIndex_(&config.currentIndex_) {}
 
   template<typename T>
   void addConfig()
@@ -72,7 +75,7 @@ class ConstConfigRef {
   const size_t size_;
 public:
   template<size_t N>
-  ConstConfigRef(const Config<N>* config) : configs_(config.configs_), size_(N){}
+  ConstConfigRef(const Config<N>* config) : configs_(config.configs_), size_(N) {}
 
   template<typename T>
   T read(size_t index) const {
@@ -82,5 +85,13 @@ public:
     return res;
   }
 };
+
+template<typename T>
+class SingleConfigRef {
+  const size_t configPos_;
+public:
+  template<size_t N>
+  SingleConfigRef(const Config<N>* config, size_t index) : configPos_(config.configs_[index]) {}
+}
 
 #endif
