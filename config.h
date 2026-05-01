@@ -92,6 +92,6 @@ class SingleConfigRef {
 public:
   template<size_t N>
   SingleConfigRef(const Config<N>* config, size_t index) : configPos_(config.configs_[index]) {}
-}
+};
 
 #endif

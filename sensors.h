@@ -1,7 +1,7 @@
 #include "HardwareSerial.h"
 #if !defined (SENSORS_H)
 #define SENSORS_H
-#include <MPU6050_light.h>
+#include "MPU6050.h"
 #include <MS5837.h>
 #include <Wire.h>
 #include "axis.h"
@@ -12,11 +12,27 @@ class Accelerometer
 public:
   Accelerometer(TwoWire& wire) : mpu(wire) {}
 
+  void setAxisMapping(MPU6050::Axis x, MPU6050::Axis y, MPU6050::Axis z)
+  {
+    mpu.setAxisMapping(x, y, z);
+  }
+  void setAxisInversion(bool invX, bool invY, bool invZ)
+  {
+    mpu.setAxisInversion(invX, invY, invZ);
+  }
+  void resetAxisTransform()
+  {
+    mpu.resetAxisTransform();
+  }
+  void calcOffsets(bool is_calc_gyro = true, bool is_calc_acc = true) {
+    mpu.calcOffsets(is_calc_gyro, is_calc_acc);
+  }
+
   uint8_t init() // Вроде не должно влиять, но что-то не работало и это помогало
   {
     //Serial.println("Accelerometer calibration");
     delay(35);
-    volatile uint8_t rc = mpu.begin();
+    volatile uint8_t rc = mpu.begin(0, 0);
     //Serial.println(rc);
     if(rc != 0)
       return rc;
@@ -24,12 +40,6 @@ public:
     //Serial.println('a');
     mpu.calcOffsets();
     return 0;
-  }
-
-
-  bool& upsideDownMounting() 
-  {
-    return mpu.upsideDownMounting;
   }
 
   Axises getAcceleration()
@@ -49,8 +59,8 @@ public:
       0,
       0,
       0,
-      float_range_to_int16(mpu.getAngleX(), -180.0, 180.0),
-      float_range_to_int16(mpu.getAngleY(), -90.0, 90.0),
+      float_range_to_int16(mpu.getAngleX(), -360.0, 360.0),
+      float_range_to_int16(mpu.getAngleY(), -360.0, 360.0),
       float_range_to_int16(math_mod(mpu.getAngleZ(), 360.0f) , 0, 360.0)
     };
   }
@@ -58,6 +68,7 @@ public:
   {
     mpu.update();
   }
+
 };
 
 class DepthGauge

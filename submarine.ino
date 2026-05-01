@@ -32,12 +32,16 @@ void setup() {
 
 
 
-  if (acc.init()) {
-    Serial.println("Failed Accelerometer init");
+  if (int rc = acc.init() != 0) {
+    Serial.print("Failed Accelerometer init with code: ");
+    Serial.println(rc);
     while (1) {
       delay(10);
     }
   }
+  acc.setAxisMapping(MPU6050::Axis::AXIS_Y, MPU6050::Axis::AXIS_X, MPU6050::Axis::AXIS_Z);
+  acc.setAxisInversion(true, false, false);
+  acc.calcOffsets(true, true);
   Serial.println("Calibrated");
 
   /*DepthGauge depthGauge;
@@ -59,12 +63,12 @@ void setup() {
 
   Serial.println("transmitter init: OK");
   MotorController<6> controller;
-  controller[0].axises() = Axises(30000, 30000, 30000, 30000, 30000, 30000);
-  controller[1].axises() = Axises(30000, 30000, 30000, 30000, 30000, 30000);
-  controller[2].axises() = Axises(30000, 30000, 30000, 30000, 30000, 30000);
-  controller[3].axises() = Axises(30000, 30000, 30000, 30000, 30000, 30000);
-  controller[4].axises() = Axises(30000, 30000, 30000, 30000, 30000, 30000);
-  controller[5].axises() = Axises(30000, 30000, 30000, 30000, 30000, 30000);
+  controller[0].axises() = Axises(0, 0, 32767, 0, 32767, 0);
+  controller[1].axises() = Axises(32767, 0, 0, 0, 0, 32767);
+  controller[2].axises() = Axises(32767, 0, 0, 0, 0, -32768);
+  controller[3].axises() = Axises(0, 0, 32767, 0, -32768, 0);
+  controller[4].axises() = Axises(0, 0, 0, 0, 0, 0);
+  controller[5].axises() = Axises(0, 0, 0, 0, 0, 0);
 
   uint32_t lastCycle = millis();
   //uint32_t lastNet = millis();
@@ -124,6 +128,7 @@ void setup() {
       msg.push(pack, SubmarinePacket::serializedSize());
       transmitter.sendData(msg);
       msg.clear();
+      Serial.println("send");
     }
     controller.update();
 
